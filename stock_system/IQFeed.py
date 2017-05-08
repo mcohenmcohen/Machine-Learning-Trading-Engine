@@ -14,10 +14,10 @@ class DataFeed(object):
         self.sock = None
         self.symbols = []
 
+    def _get_data(self, sym, start_date='20170101', host="127.0.0.1", port=9100):
 
-    def get_data(self, sym, host="127.0.0.1", port=9100):
-
-        message = "HIT,%s,60,20170101 075000,,,093000,160000,1\n" % sym
+        # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
+        message = "HIT,%s,60,%s 075000,,,093000,160000,1\n" % (sym, start_date)
 
         # Open a streaming socket to the IQFeed server locally
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -27,22 +27,58 @@ class DataFeed(object):
         # message and buffer the data
         sock.sendall(message)
         self.sock = sock
-        #print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
+        # print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
         data = self._read_historical_data_socket()
-        #timeit.Timer(self._read_historical_data_socket()).timeit()
+        # timeit.Timer(self._read_historical_data_socket()).timeit()
         sock.close
+
+        return data
+
+    def get_data_hist(self, sym, start_date='20170101', host="127.0.0.1", port=9100):
+        '''
+        Wrapper for get_data
+        Input:  Symbol to lookup, start date
+        Output: A dataframe of the symbol data
+        '''
+        data = self._get_data(sym, start_date)
 
         # Remove all the endlines and line-ending
         # comma delimiter from each record
         data = "".join(data.split("\r"))
         data = data.replace(",\n", "\n")[:-1]
 
-        cols = ['date','open','low','high','close','volume','open_interest']
+        cols = ['date', 'open', 'low', 'high', 'close', 'volume', 'open_interest']
         df = pd.read_csv(StringIO(data), names=cols)
-        df.insert(0, 'symbol',sym)
-        #df = pd.read_csv('AAPL.csv', names=cols)
+        df.insert(0, 'symbol', sym)
+        # df = pd.read_csv('AAPL.csv', names=cols)
 
         return df
+
+    def get_data_stream(self, sym, host="127.0.0.1", port=5009, recv_buffer=4096):
+        # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
+        message = "w%s\n" % sym
+
+        # Open a streaming socket to the IQFeed server locally
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, port))
+
+        # Send the historical data request
+        # message and buffer the data
+        header = 'S,SELECT UPDATE FIELDS,Last,Percent Change,Change,Symbol\n'
+        sock.sendall(header)
+        sock.sendall(message)
+        self.sock = sock
+        # print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
+        while True:
+            data = self.sock.recv(recv_buffer)
+            print 'data -----: ', data
+        # timeit.Timer(self._read_historical_data_socket()).timeit()
+        sock.close
+
+        return data
+
+    def get_data_news():
+        pass
 
     def _read_historical_data_socket(self, recv_buffer=4096):
         """
@@ -56,9 +92,9 @@ class DataFeed(object):
         buffer = ""
         data = ""
         while True:
-            #print 1
+            # print 1
             data = self.sock.recv(recv_buffer)
-            #print data
+            # print data
             buffer += data
 
             # Check if the end message string arrives
@@ -69,7 +105,28 @@ class DataFeed(object):
         buffer = buffer[:-12]
         return buffer
 
-    #def write_data(dataframe)
+    # def write_data(dataframe)
+
+    def send_msg(self, message, host="127.0.0.1", port=9100, recv_buffer=4096):
+
+        # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
+        message = message + '\n'
+        #message = 'S,SELECT UPDATE FIELDS,Last,Percent Change,Change,Symbol\n' + message + '\n'
+
+        # Open a streaming socket to the IQFeed server locally
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, port))
+
+        # Send the historical data request
+        # message and buffer the data
+        sock.sendall(message)
+        self.sock = sock
+        # print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
+        data = self.sock.recv(recv_buffer)
+        # timeit.Timer(self._read_historical_data_socket()).timeit()
+        sock.close
+
+        return data
 
 
 if __name__ == "__main__":
@@ -80,7 +137,7 @@ if __name__ == "__main__":
 
     # Download each symbol to disk
     for sym in syms:
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         print "Downloading symbol: %s..." % sym
 
         # Construct the message needed by IQFeed to retrieve data

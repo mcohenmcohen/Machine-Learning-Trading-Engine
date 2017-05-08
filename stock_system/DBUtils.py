@@ -11,3 +11,6 @@ class DBUtils(object):
 
     def write_symbol_data(self, dataframe):
         dataframe.to_sql('symbols', self.engine, if_exists='append', index=False)
+
+    def read_symbold_data():
+        pass

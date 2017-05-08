@@ -12,10 +12,19 @@ if __name__ == "__main__":
     feed = IQFeed.DataFeed()
     db = DBUtils.DBUtils()
 
-    start_time = timeit.default_timer()
-    df = feed.get_data('FB')
-    print(timeit.default_timer() - start_time)
+    symbols = ['FB','SPY','QQQ']
+    start_date = '20170101'
 
-    start_time = timeit.default_timer()
-    db.write_symbol_data(df)
-    print(timeit.default_timer() - start_time)
+    for sym in symbols:
+        print 'Processing %s' % sym
+        start_time = timeit.default_timer()
+        df = feed.get_data_hist(sym, start_date)
+
+        retrieve_time = timeit.default_timer() - start_time
+        print '- time to retrieve: ', retrieve_time
+
+        start_time = timeit.default_timer()
+        db.write_symbol_data(df)
+        print '- time to db write: ', timeit.default_timer() - start_time
+
+    print 'Done.'
