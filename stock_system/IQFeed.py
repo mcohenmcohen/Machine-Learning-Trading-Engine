@@ -14,10 +14,16 @@ class DataFeed(object):
         self.sock = None
         self.symbols = []
 
-    def _get_data(self, sym, start_date='20170101', host="127.0.0.1", port=9100):
+    def _get_data(self, sym, message, start_date='20170101', host="127.0.0.1", port=9100):
+        '''
+        Get data from the IQFeed server.  Private method.
+        This is the main method for server access.  It establishes the connection
+        and receives the data.
 
+        Input:  Symbol data to get.  Optional Parameters.
+        Output: Data as a string.
+        '''
         # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
-        message = "HIT,%s,60,%s 075000,,,093000,160000,1\n" % (sym, start_date)
 
         # Open a streaming socket to the IQFeed server locally
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -34,13 +40,15 @@ class DataFeed(object):
 
         return data
 
-    def get_data_hist(self, sym, start_date='20170101', host="127.0.0.1", port=9100):
+    def get_data_hist(self, sym, message, start_date='20170101', host="127.0.0.1", port=9100):
         '''
         Wrapper for get_data
-        Input:  Symbol to lookup, start date
+
+        Input:  Symbol to lookup, start date.  Optional connetion params.
         Output: A dataframe of the symbol data
         '''
-        data = self._get_data(sym, start_date)
+        # message = "HIT,%s,60,%s 075000,,,093000,160000,1\n" % (sym, start_date)
+        data = self._get_data(sym, message, start_date)
 
         # Remove all the endlines and line-ending
         # comma delimiter from each record
@@ -55,6 +63,12 @@ class DataFeed(object):
         return df
 
     def get_data_stream(self, sym, host="127.0.0.1", port=5009, recv_buffer=4096):
+        '''
+        Wrapper for get_data
+
+        Input:  Symbol to stream.  Optional connetion params.
+        Output: ? TBD
+        '''
         # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
         message = "w%s\n" % sym
 
@@ -78,6 +92,12 @@ class DataFeed(object):
         return data
 
     def get_data_news():
+        '''
+        Wrapper for get_data
+
+        Input:  Symbol to get news for.  Optional connetion params.
+        Output: ? TBD
+        '''
         pass
 
     def _read_historical_data_socket(self, recv_buffer=4096):
@@ -108,22 +128,40 @@ class DataFeed(object):
     # def write_data(dataframe)
 
     def send_msg(self, message, host="127.0.0.1", port=9100, recv_buffer=4096):
-
+        '''
+        Send a single message, such as an admin or test message
+        Input:  The message to send, plus optional connextion Parameters
+        Output: The server's message response
+        '''
         # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
         message = message + '\n'
-        #message = 'S,SELECT UPDATE FIELDS,Last,Percent Change,Change,Symbol\n' + message + '\n'
+        # message = 'S,SELECT UPDATE FIELDS,Last,Percent Change,Change,Symbol\n' + message + '\n'
 
         # Open a streaming socket to the IQFeed server locally
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((host, port))
 
-        # Send the historical data request
-        # message and buffer the data
+        # Send the message and buffer the data.
+        # If its a system msg ('S' is the first field) don't buffer it
         sock.sendall(message)
         self.sock = sock
-        # print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
-        data = self.sock.recv(recv_buffer)
-        # timeit.Timer(self._read_historical_data_socket()).timeit()
+
+        data = ''
+        if message[0:2].upper() == 'S,':
+            data = self.sock.recv(recv_buffer)
+        else:
+            buffer = ''
+            while True:
+                # print 1
+                data = self.sock.recv(recv_buffer)
+                # print data
+                buffer += data
+
+                # Check if the end message string arrives
+                if "!ENDMSG!" in buffer:
+                    break
+            data = buffer
+
         sock.close
 
         return data

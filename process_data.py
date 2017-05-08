@@ -18,7 +18,8 @@ if __name__ == "__main__":
     for sym in symbols:
         print 'Processing %s' % sym
         start_time = timeit.default_timer()
-        df = feed.get_data_hist(sym, start_date)
+        message = "HIT,%s,60,%s 075000,,,093000,160000,1\n" % (sym, start_date)
+        df = feed.get_data_hist(sym, message, start_date)
 
         retrieve_time = timeit.default_timer() - start_time
         print '- time to retrieve: ', retrieve_time
