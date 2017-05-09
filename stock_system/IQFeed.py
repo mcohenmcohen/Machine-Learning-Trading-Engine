@@ -4,8 +4,6 @@ import sys
 import socket
 import pandas as pd
 import numpy as np
-import timeit
-from StringIO import StringIO  # For python 2.  For python 3 import from io
 
 
 class DataFeed(object):
@@ -14,53 +12,53 @@ class DataFeed(object):
         self.sock = None
         self.symbols = []
 
-    def _get_data(self, sym, message, start_date='20170101', host="127.0.0.1", port=9100):
-        '''
-        Get data from the IQFeed server.  Private method.
-        This is the main method for server access.  It establishes the connection
-        and receives the data.
+    # def _get_data(self, sym, message, start_date='20170101', host="127.0.0.1", port=9100):
+    #     '''
+    #     Get data from the IQFeed server.  Private method.
+    #     This is the main method for server access.  It establishes the connection
+    #     and receives the data.
+    #
+    #     Input:  Symbol data to get.  Optional Parameters.
+    #     Output: Data as a string.
+    #     '''
+    #     # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
+    #
+    #     # Open a streaming socket to the IQFeed server locally
+    #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #     sock.connect((host, port))
+    #
+    #     # Send the historical data request
+    #     # message and buffer the data
+    #     sock.sendall(message)
+    #     self.sock = sock
+    #     # print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
+    #     data = self._read_historical_data_socket()
+    #     # timeit.Timer(self._read_historical_data_socket()).timeit()
+    #     sock.close
+    #
+    #     return data
 
-        Input:  Symbol data to get.  Optional Parameters.
-        Output: Data as a string.
-        '''
-        # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
-
-        # Open a streaming socket to the IQFeed server locally
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((host, port))
-
-        # Send the historical data request
-        # message and buffer the data
-        sock.sendall(message)
-        self.sock = sock
-        # print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
-        data = self._read_historical_data_socket()
-        # timeit.Timer(self._read_historical_data_socket()).timeit()
-        sock.close
-
-        return data
-
-    def get_data_hist(self, sym, message, start_date='20170101', host="127.0.0.1", port=9100):
-        '''
-        Wrapper for get_data
-
-        Input:  Symbol to lookup, start date.  Optional connetion params.
-        Output: A dataframe of the symbol data
-        '''
-        # message = "HIT,%s,60,%s 075000,,,093000,160000,1\n" % (sym, start_date)
-        data = self._get_data(sym, message, start_date)
-
-        # Remove all the endlines and line-ending
-        # comma delimiter from each record
-        data = "".join(data.split("\r"))
-        data = data.replace(",\n", "\n")[:-1]
-
-        cols = ['date', 'open', 'low', 'high', 'close', 'volume', 'open_interest']
-        df = pd.read_csv(StringIO(data), names=cols)
-        df.insert(0, 'symbol', sym)
-        # df = pd.read_csv('AAPL.csv', names=cols)
-
-        return df
+    # def get_data_hist(self, sym, message, start_date='20170101', host="127.0.0.1", port=9100):
+    #     '''
+    #     Wrapper for get_data
+    #
+    #     Input:  Symbol to lookup, start date.  Optional connetion params.
+    #     Output: A dataframe of the symbol data
+    #     '''
+    #     # message = "HIT,%s,60,%s 075000,,,093000,160000,1\n" % (sym, start_date)
+    #     data = self._get_data(sym, message, start_date)
+    #
+    #     # Remove all the endlines and line-ending
+    #     # comma delimiter from each record
+    #     data = "".join(data.split("\r"))
+    #     data = data.replace(",\n", "\n")[:-1]
+    #
+    #     cols = ['date', 'open', 'low', 'high', 'close', 'volume', 'open_interest']
+    #     df = pd.read_csv(StringIO(data), names=cols)
+    #     df.insert(0, 'symbol', sym)
+    #     # df = pd.read_csv('AAPL.csv', names=cols)
+    #
+    #     return df
 
     def get_data_stream(self, sym, host="127.0.0.1", port=5009, recv_buffer=4096):
         '''
@@ -100,36 +98,37 @@ class DataFeed(object):
         '''
         pass
 
-    def _read_historical_data_socket(self, recv_buffer=4096):
-        """
-        Read the information from the socket, in a buffered
-        fashion, receiving only 4096 bytes at a time.
+    # def _read_historical_data_socket(self, recv_buffer=4096):
+    #     """
+    #     Read the information from the socket, in a buffered
+    #     fashion, receiving only 4096 bytes at a time.
+    #
+    #     Parameters:
+    #     sock - The socket object
+    #     recv_buffer - Amount in bytes to receive per read
+    #     """
+    #     buffer = ""
+    #     data = ""
+    #     while True:
+    #         # print 1
+    #         data = self.sock.recv(recv_buffer)
+    #         # print data
+    #         buffer += data
+    #
+    #         # Check if the end message string arrives
+    #         if "!ENDMSG!" in buffer:
+    #             break
+    #
+    #     # Remove the end message string
+    #     buffer = buffer[:-12]
+    #     return buffer
+    #
+    # # def write_data(dataframe)
 
-        Parameters:
-        sock - The socket object
-        recv_buffer - Amount in bytes to receive per read
-        """
-        buffer = ""
-        data = ""
-        while True:
-            # print 1
-            data = self.sock.recv(recv_buffer)
-            # print data
-            buffer += data
-
-            # Check if the end message string arrives
-            if "!ENDMSG!" in buffer:
-                break
-
-        # Remove the end message string
-        buffer = buffer[:-12]
-        return buffer
-
-    # def write_data(dataframe)
-
-    def send_msg(self, message, host="127.0.0.1", port=9100, recv_buffer=4096):
+    def get_data(self, message, host="127.0.0.1", port=9100, recv_buffer=4096):
         '''
-        Send a single message, such as an admin or test message
+        Get data from the IQFeed server.
+
         Input:  The message to send, plus optional connextion Parameters
         Output: The server's message response
         '''
@@ -181,22 +180,11 @@ if __name__ == "__main__":
         # Construct the message needed by IQFeed to retrieve data
         message = "HIT,%s,60,20140101 075000,,,093000,160000,1\n" % sym
 
-        # Open a streaming socket to the IQFeed server locally
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((host, port))
-
-        # Send the historical data request
-        # message and buffer the data
-        sock.sendall(message)
-        data = read_historical_data_socket(sock)
-        sock.close
-
-        # Remove all the endlines and line-ending
-        # comma delimiter from each record
+        data = feed.get_data(message)
         data = "".join(data.split("\r"))
         data = data.replace(",\n", "\n")[:-1]
 
-        # Write the data stream to disk
+        # Write the data as .csv to disk
         f = open("%s.csv" % sym, "w")
         f.write(data)
         f.close()

@@ -30,16 +30,16 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 
-
 CREATE TABLE symbols (
-	symbol character varying
-    date character varying,
+	symbol character varying,
+    date timestamp,
     open real,
     low real,
     high real,
     close real,
 	volume integer,
 	open_interest integer
+	-- ,PRIMARY KEY (symbol, date)
 );
 
 
