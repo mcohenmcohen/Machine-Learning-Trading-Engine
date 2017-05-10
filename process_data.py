@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from stock_system import IQFeed, DBUtils
+from stock_system import IQFeed, DataUtils
 import timeit
 from StringIO import StringIO  # For python 2.  For python 3 import from io
 
@@ -11,10 +11,10 @@ from StringIO import StringIO  # For python 2.  For python 3 import from io
 if __name__ == "__main__":
 
     feed = IQFeed.DataFeed()
-    db = DBUtils.DBUtils()
+    db = DataUtils.DataUtils()
 
-    symbols = ['FB','SPY','QQQ']
-    start_date = '20170101'
+    symbols = ['SPY']
+    start_date = '20030101'
 
     for sym in symbols:
         print 'Processing %s' % sym

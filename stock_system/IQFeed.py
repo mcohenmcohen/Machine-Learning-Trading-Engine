@@ -12,119 +12,6 @@ class DataFeed(object):
         self.sock = None
         self.symbols = []
 
-    # def _get_data(self, sym, message, start_date='20170101', host="127.0.0.1", port=9100):
-    #     '''
-    #     Get data from the IQFeed server.  Private method.
-    #     This is the main method for server access.  It establishes the connection
-    #     and receives the data.
-    #
-    #     Input:  Symbol data to get.  Optional Parameters.
-    #     Output: Data as a string.
-    #     '''
-    #     # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
-    #
-    #     # Open a streaming socket to the IQFeed server locally
-    #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #     sock.connect((host, port))
-    #
-    #     # Send the historical data request
-    #     # message and buffer the data
-    #     sock.sendall(message)
-    #     self.sock = sock
-    #     # print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
-    #     data = self._read_historical_data_socket()
-    #     # timeit.Timer(self._read_historical_data_socket()).timeit()
-    #     sock.close
-    #
-    #     return data
-
-    # def get_data_hist(self, sym, message, start_date='20170101', host="127.0.0.1", port=9100):
-    #     '''
-    #     Wrapper for get_data
-    #
-    #     Input:  Symbol to lookup, start date.  Optional connetion params.
-    #     Output: A dataframe of the symbol data
-    #     '''
-    #     # message = "HIT,%s,60,%s 075000,,,093000,160000,1\n" % (sym, start_date)
-    #     data = self._get_data(sym, message, start_date)
-    #
-    #     # Remove all the endlines and line-ending
-    #     # comma delimiter from each record
-    #     data = "".join(data.split("\r"))
-    #     data = data.replace(",\n", "\n")[:-1]
-    #
-    #     cols = ['date', 'open', 'low', 'high', 'close', 'volume', 'open_interest']
-    #     df = pd.read_csv(StringIO(data), names=cols)
-    #     df.insert(0, 'symbol', sym)
-    #     # df = pd.read_csv('AAPL.csv', names=cols)
-    #
-    #     return df
-
-    def get_data_stream(self, sym, host="127.0.0.1", port=5009, recv_buffer=4096):
-        '''
-        Wrapper for get_data
-
-        Input:  Symbol to stream.  Optional connetion params.
-        Output: ? TBD
-        '''
-        # message = "HIT,%s,60,20030101 075000,,,093000,160000,1\n" % sym
-        message = "w%s\n" % sym
-
-        # Open a streaming socket to the IQFeed server locally
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect((host, port))
-
-        # Send the historical data request
-        # message and buffer the data
-        header = 'S,SELECT UPDATE FIELDS,Last,Percent Change,Change,Symbol\n'
-        sock.sendall(header)
-        sock.sendall(message)
-        self.sock = sock
-        # print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
-        while True:
-            data = self.sock.recv(recv_buffer)
-            print 'data -----: ', data
-        # timeit.Timer(self._read_historical_data_socket()).timeit()
-        sock.close
-
-        return data
-
-    def get_data_news():
-        '''
-        Wrapper for get_data
-
-        Input:  Symbol to get news for.  Optional connetion params.
-        Output: ? TBD
-        '''
-        pass
-
-    # def _read_historical_data_socket(self, recv_buffer=4096):
-    #     """
-    #     Read the information from the socket, in a buffered
-    #     fashion, receiving only 4096 bytes at a time.
-    #
-    #     Parameters:
-    #     sock - The socket object
-    #     recv_buffer - Amount in bytes to receive per read
-    #     """
-    #     buffer = ""
-    #     data = ""
-    #     while True:
-    #         # print 1
-    #         data = self.sock.recv(recv_buffer)
-    #         # print data
-    #         buffer += data
-    #
-    #         # Check if the end message string arrives
-    #         if "!ENDMSG!" in buffer:
-    #             break
-    #
-    #     # Remove the end message string
-    #     buffer = buffer[:-12]
-    #     return buffer
-    #
-    # # def write_data(dataframe)
-
     def get_data(self, message, host="127.0.0.1", port=9100, recv_buffer=4096):
         '''
         Get data from the IQFeed server.
@@ -159,11 +46,63 @@ class DataFeed(object):
                 # Check if the end message string arrives
                 if "!ENDMSG!" in buffer:
                     break
+
             data = buffer
 
         sock.close
 
         return data
+
+    def open(host="127.0.0.1", port=5009, recv_buffer=4096):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, port))
+        return sock
+
+    def send(sock, message, recv_buffer=4096):
+        sock.sendall(message)
+        print sock.recv(recv_buffer)
+
+    def get_data_stream(self, sym, host="127.0.0.1", port=5009, recv_buffer=4096):
+        '''
+        Wrapper for get_data
+
+        Input:  Symbol to stream.  Optional connetion params.
+        Output: ? TBD
+        '''
+        # Open a streaming socket to the IQFeed server locally
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, port))
+
+        # Send headers
+        # Select requested fields
+        sock.sendall('S,SELECT UPDATE FIELDS,Last,Percent Change,Change,Symbol\n')
+        # Turn off the timestamp feed
+        sock.sendall('S,TIMESTAMPSOFF\n')
+
+        # Send the symbol watch message
+        message = "w%s\n" % sym
+        sock.sendall(message)
+        self.sock = sock
+        # print min(timeit.Timer('a=s[:]; timsort(a)', setup=setup)
+        #while True:
+        i = 0
+        while i < 10:
+            data = self.sock.recv(recv_buffer)
+            print 'data -----: ', data
+            i += 1
+        # timeit.Timer(self._read_historical_data_socket()).timeit()
+        sock.close
+
+        return data
+
+    def get_data_news():
+        '''
+        Wrapper for get_data
+
+        Input:  Symbol to get news for.  Optional connetion params.
+        Output: ? TBD
+        '''
+        pass
 
 
 if __name__ == "__main__":
