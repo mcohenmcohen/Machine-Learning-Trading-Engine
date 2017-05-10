@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import psycopg2 as pg2
 from sqlalchemy import create_engine
+import quandl
 
 # https://github.com/mrjbq7/ta-lib
 # documentation: https://github.com/mrjbq7/ta-lib/blob/master/docs/func.md
@@ -9,7 +10,7 @@ import talib
 
 
 ##################################
-# Database access
+# Class for accessing data
 ##################################
 class DataUtils(object):
 
@@ -29,11 +30,49 @@ class DataUtils(object):
         for row in rows:
             print "   ", row[0]
 
-    def write_symbol_data(self, dataframe):
-        dataframe.to_sql('symbols', self.engine, if_exists='append', index=False)
+    def write_symbol_data(self, df):
+        df.to_sql('symbols', self.engine, if_exists='append', index=False)
 
-    def read_symbol_data(self, query):
+    def read_symbol_data(self, symbol, query, period='D'):
+        '''
+        Extract symbol time series data by period
+        Valid time periods: minute, 15 min, hour, daily, weekly
+
+        Input:   Symbol to query, time series period
+        Output:  Dataframe of the period time series
+        '''
+        period = str(period).upper()
+
+        prefix = "select * from symbols where symbol = '%s' and " % symbol
+        # No where clause for minutes.  Default is minutes
+        if period == '15':
+            where = "EXTRACT(MINUTE FROM date) = 0 \
+                     or EXTRACT(MINUTE FROM date) = 15 \
+                     or EXTRACT(MINUTE FROM date) = 30 \
+                     or EXTRACT(MINUTE FROM date) = 45"
+        if period == 'H':
+            where = "EXTRACT(MINUTE FROM date) = 0"
+        if period == 'D':
+            where = "EXTRACT(HOUR FROM date) = 16 and EXTRACT(MINUTE FROM date) = 0"
+        if period == 'W':
+            where = "EXTRACT(HOUR FROM date) = 16 and EXTRACT(MINUTE FROM date) = 0 \
+                     and EXTRACT(DOW FROM date) = 5"
+
+        query = prefix + where
         return pd.read_sql(query, self.engine)
+
+    ##################################
+    # get data from Quandl
+    ##################################
+    def get_data_q(self, symbol):
+        '''
+        Get data from quandl
+
+        input:  symbol
+        output: dataframe of daily data
+        '''
+        sym = 'WIKI/%s', symbol
+        return quandl.get(sym)
 
     ##################################
     # Math / Algos
@@ -103,5 +142,3 @@ class DataUtils(object):
         df['sto'] = slowk
 
         return df
-
-    
