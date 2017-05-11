@@ -16,6 +16,32 @@ class ModelUtils(object):
     def __init__(self):
         self.models = []
 
+    def simple_data_split(self, X, y, test_set_size=100):
+        '''
+        Simple train/test set split where the tail end of the total set becomes the test set.
+
+        Input:  test_set_size (representing the last n bars of (price) data)
+        Output: X_train, X_test, y_train, y_test
+
+        - TODO: Could perform a query to order by date to ensure the df/array is date ordered.
+                This is currently presumed.
+        '''
+        # from sklearn.cross_validation import PredefinedSplit
+        #
+        # X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
+        # y = np.array([0, 0, 1, 1])
+        # test_fold = [0, 0, 1]
+        # ps = PredefinedSplit(test_fold=test_fold, )
+        #
+        # for train_index, test_index in ps:
+        #     print("TRAIN:", train_index, "TEST:", test_index)
+        X_train = X[0:-test_set_size]
+        X_test = X[-test_set_size:]
+        y_train = y[0:-test_set_size]
+        y_test = y[-test_set_size:]
+
+        return X_train, X_test, y_train, y_test
+
     def print_scores(self, y_true, y_pred):
         '''
         Output all score types for a prediction vs actual y values
@@ -79,6 +105,7 @@ class ModelUtils(object):
             test = X_train[test_index]
             test_y = y_train[test_index]
 
+            print '===== Fitting model split %s =====' % (index+1)
             model.fit(train, train_y)
             pred = model.predict(test)
             error[index] = self.rmse(test_y, pred)
@@ -95,3 +122,30 @@ class ModelUtils(object):
         # print 'cross_val_score: ', score
 
         return np.mean(error)
+
+    def walk_forward_train(self, model, X, y, start_index=100, window_range=100):
+        '''
+        Perform walk forward testing on the input data.
+
+        input:
+        start_index:  the index to initiate the X data set with - 0 to index
+        window_range: the step to walk forward
+
+        **  I don't think there is any benefit for this since the model doen's
+            incorporate the new data in an iterative way.
+        '''
+        # X = series.values
+        n_records = len(X)
+        #import pdb; pdb.set_trace()
+        print '====== Starting walk forward: %s records ======' % n_records
+        for i in range(start_index, n_records, window_range):
+            print '--- index: %s' % i
+            X_train, X_test = X[0:i], X[i:i+window_range]
+            y_train, y_test = y[0:i], y[i:i+window_range]
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            y_pred_proba = model.predict_proba(X_test)
+            score = self.print_scores(y_test, y_pred)
+            # print('train=%d, test=%d' % (len(X_train), len(X_test)))
+            #print 'Cnt, Pred, True, Accuracy, Total: %s' % (i)#, y_pred[:-2:-1], y_test[:-2:-1])#, score, y_pred_proba)
+            print '- score: %s, prob: %s' % (score, y_pred_proba)

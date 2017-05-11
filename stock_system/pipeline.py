@@ -27,22 +27,23 @@ cols = ['roc', 'sto', 'macd', 'willr', 'rsi']
 X = df[cols].values
 y = df['target'].values
 
-# Instantiate models
-rf = RandomForestClassifier()
+# Instantiate model(s)
+# Results from grid search
+# {'max_features': 'log2', 'n_estimators': 1000, 'min_samples_leaf': 10}
+rf = RandomForestClassifier(
+       n_estimators=1000,
+       max_depth=None,
+       min_samples_leaf=10,
+       max_features='log2',
+       oob_score=True
+   )
 
-# Fit and train the model
+# Split, fit, train, and predit the model
+m = ModelUtils.ModelUtils()
 # X_train, X_test, y_train, y_test = train_test_split(X, y)  # Can't do with time series
-m = ModelUtils.ModelUtils()
-m.predict_tscv(rf, X, y)
+X_train, X_test, y_train, y_test = m.simple_data_split(X, y, test_set_size=100)
+m.predict_tscv(rf, X_train, y_train)
 
-# Run grid search for hyper parameters?
-gs = GridUtils.GridSearcher()
-gs.grid_search_reporter(X, y)
-
-# Fit and train the model
-m = ModelUtils.ModelUtils()
-
-rf.fit(X_train, y_train)
 y_hat = rf.predict(X_test)
 # rf.score(yhat, y_test)
 
@@ -50,6 +51,10 @@ y_hat = rf.predict(X_test)
 m.print_scores(y_test, y_hat)
 m.print_standard_confusion_matrix(y_test, y_hat)
 
+
+# Run grid search for hyper parameters?
+gs = GridUtils.GridSearcher()
+gs.grid_search_reporter(X_train, y_train)
 # Feature importances
 rf.feature_importances_
 
