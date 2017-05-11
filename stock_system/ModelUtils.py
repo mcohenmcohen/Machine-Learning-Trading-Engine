@@ -1,9 +1,15 @@
 # ModelUtils
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.linear_model import Ridge, Lasso, LinearRegression, LogisticRegression
 from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score
 from sklearn.metrics import mean_squared_error, r2_score, f1_score, confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score, cross_val_predict
-import numpy as np
+
 
 class ModelUtils(object):
 
