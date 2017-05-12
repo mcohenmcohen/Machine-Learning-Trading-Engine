@@ -44,17 +44,29 @@ class ModelUtils(object):
 
     def print_scores(self, y_true, y_pred):
         '''
-        Output all score types for a prediction vs actual y values
+        Print all score, including the sklearn classification report
+
+        Input:  y pred and true labels
+        Output: Print all score values
+                A dict of the scores: key = metric name, value = score
+
         '''
         relevant_metrics = [precision_score, recall_score, accuracy_score, roc_auc_score,
                             mean_squared_error, r2_score, f1_score]
+        # met = []
+        met = {}
         for metric in relevant_metrics:
             m = metric(y_true, y_pred)
+            # met.append(m)
+            met[metric.__name__] = m
             # scores[metric.__name__] = m
             print metric.__name__, ' = ', m
 
         # Print out of the box classification_report
         print classification_report(y_true, y_pred)
+
+        # return the list of metric scores
+        return met
 
     def standard_confusion_matrix(self, y_true, y_pred):
         '''
@@ -99,6 +111,7 @@ class ModelUtils(object):
         error = np.empty(num_folds)
 
         index = 0
+        all_scores = []
         for train_index, test_index in tscv.split(X_train):
             train = X_train[train_index]
             train_y = y_train[train_index]
@@ -112,7 +125,7 @@ class ModelUtils(object):
 
             print 'train, test size: ', str(train_index.shape[0]) + ',', str(test_index.shape[0])
             print '- rmse: ', error[index]
-            self.print_scores(test_y, pred)
+            all_scores.append(self.print_scores(test_y, pred))
             self.print_standard_confusion_matrix(test_y, pred)
 
             index += 1
@@ -121,7 +134,8 @@ class ModelUtils(object):
         # predict = cross_val_predict(model, X_train, y_train, cv=tscv.split(X_train))
         # print 'cross_val_score: ', score
 
-        return np.mean(error)
+        # return np.mean(error)
+        return all_scores
 
     def walk_forward_train(self, model, X, y, start_index=100, window_range=100):
         '''

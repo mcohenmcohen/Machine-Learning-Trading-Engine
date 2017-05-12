@@ -129,7 +129,7 @@ class DataUtils(object):
         close = df['exp_smooth_close'].values
         volume = df['exp_smooth_volume'].values.astype(float)
 
-        df['roc'] = talib.ROCP(close, timeperiod=10)
+        df['roc'] = talib.ROCP(close, timeperiod=1)
         df['rsi'] = talib.RSI(close, timeperiod=14)
         df['willr'] = talib.WILLR(high, low, close, timeperiod=14)
         df['obv'] = talib.OBV(close, volume)
@@ -142,3 +142,10 @@ class DataUtils(object):
         df['sto'] = slowk
 
         return df
+
+    def rate_of_change(arr, period=1):
+        '''
+        Calcuate the rate of change from n periods ago
+        '''
+        pass
+        #return (price-prevPrice)/prevPrice
