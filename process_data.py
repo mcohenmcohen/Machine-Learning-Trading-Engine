@@ -7,6 +7,7 @@ from StringIO import StringIO  # For python 2.  For python 3 import from io
 # cols = ['DATE','OPEN','LOW','HIGH','CLOSE','VOLUME','OPEN INTEREST']
 # df = pd.read_csv('AAPL.csv', names=cols)
 
+# Make sure IQFeed is running
 
 if __name__ == "__main__":
 

@@ -8,6 +8,7 @@ import quandl
 # documentation: https://github.com/mrjbq7/ta-lib/blob/master/docs/func.md
 import talib
 
+# select * from symbols where date > timestamp '2017-05-01 00:00:00' and EXTRACT(HOUR FROM date) = 16 and EXTRACT(MINUTE FROM date) = 0;
 
 ##################################
 # Class for accessing data
@@ -123,13 +124,14 @@ class DataUtils(object):
         talib
         - docs: https://github.com/mrjbq7/ta-lib/blob/master/docs/func_groups/momentum_indicators.md
         '''
-        # open  = df['open']
-        high = df['exp_smooth_high'].values
-        low = df['exp_smooth_low'].values
-        close = df['exp_smooth_close'].values
-        volume = df['exp_smooth_volume'].values.astype(float)
+        opn  = np.roll(df['exp_smooth_open'],1)
+        high = np.roll(df['exp_smooth_high'],1)
+        low = np.roll(df['exp_smooth_low'],1)
+        close = np.roll(df['exp_smooth_close'],1)
+        volume = np.roll(df['exp_smooth_volume'],1)
 
-        df['roc'] = talib.ROCP(close, timeperiod=1)
+        # df['roc'] = talib.ROCP(close, timeperiod=1)
+        df['roc'] = self.rate_of_change(close, 1)
         df['rsi'] = talib.RSI(close, timeperiod=14)
         df['willr'] = talib.WILLR(high, low, close, timeperiod=14)
         df['obv'] = talib.OBV(close, volume)
@@ -143,9 +145,12 @@ class DataUtils(object):
 
         return df
 
-    def rate_of_change(arr, period=1):
+    def rate_of_change(self, arr, period=1):
         '''
-        Calcuate the rate of change from n periods ago
+        Calcuate the rate of change from n periods ago.  Seems Talib ROC is buggy.  TODO.
         '''
-        pass
+        yesterday = np.roll(arr,period)
+        today = arr
+
         #return (price-prevPrice)/prevPrice
+        return (today-yesterday)/yesterday

@@ -107,6 +107,12 @@ def plot_alpha_rmse(model, X_train, y_train):
 
 
 def plot_oob_error(X, y, min_estimators=15, max_estimators=100):
+    '''
+    Plot the OOB error for given X, y data sets
+
+    Input:  X and y data sets
+    * Note: a large numer of estimators makes this function slow.
+    '''
     RANDOM_STATE = 0
     ensemble_clfs = [
         ("RandomForestClassifier, max_features='sqrt'",
@@ -150,12 +156,9 @@ def plot_oob_error(X, y, min_estimators=15, max_estimators=100):
 
 def roc_curve(probabilities, labels):
     '''
-    INPUT: numpy array, numpy array
-    OUTPUT: list, list, list
-
-    Take a numpy array of the predicted probabilities and a numpy array of the
+    Input:  Take a numpy array of the predicted probabilities and a numpy array of the
     true labels.
-    Return the True Positive Rates, False Positive Rates and Thresholds for the
+    Output: Return the True Positive Rates, False Positive Rates and Thresholds for the
     ROC curve.
     '''
 
@@ -186,6 +189,10 @@ def roc_curve(probabilities, labels):
 
 
 def plot_roc_curve(probabilities, y_test):
+    '''
+    Plot the an ROC curve
+    - Wrapper for roc_curve function
+    '''
     tpr, fpr, thresholds = roc_curve(probabilities, y_test)
 
     plt.plot(fpr, tpr)
