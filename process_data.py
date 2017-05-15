@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from stock_system import IQFeed, DataUtils
 import timeit
+import sys
 from StringIO import StringIO  # For python 2.  For python 3 import from io
 
 # cols = ['DATE','OPEN','LOW','HIGH','CLOSE','VOLUME','OPEN INTEREST']
@@ -11,10 +12,13 @@ from StringIO import StringIO  # For python 2.  For python 3 import from io
 
 if __name__ == "__main__":
 
+    #symbols = ['GDX']
+    symbols = sys.argv[1:]
+    #print 'Argument List:', syms
+
     feed = IQFeed.DataFeed()
     db = DataUtils.DataUtils()
 
-    symbols = ['SPY']
     start_date = '20030101'
 
     for sym in symbols:

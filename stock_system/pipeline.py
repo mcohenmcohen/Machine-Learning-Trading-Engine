@@ -24,7 +24,8 @@ df['gain_loss'] = np.append(0, diff)
 # - could generate this as a param:
 # - - time period:  daily, 5 minute, estimators_w_grid_dict
 # df['y_true'] = (df.close.pct_change(1) >= 0).astype(int)
-df['y_true'] = (df.gain_loss >= 0).astype(int)
+gl = (df.gain_loss >= 0).astype(int)
+df['y_true'] = np.roll(gl,-1)
 # Drop the last row?
 df = df[:-1]
 
@@ -47,7 +48,17 @@ df = df[:-1]
 # Use only relevant columns for the model in X
 y = df.pop('y_true').values
 X = df.values
-x_cols = ['roc', 'sto', 'macd', 'willr', 'rsi']
+# 1st paper
+x_cols = ['roc', 'rsi', 'willr', 'obv', 'stok']
+# Oscilators
+# x_osc = ['rsi', 'cci', 'stod', 'stok', 'willr']
+# x_oscd_cols = ['rsi_d', 'cci_d', 'stod_d', 'stok_d', 'willr_d']
+# # MAs
+# x_ma_cols = ['sma20', 'sma50', 'sma200', 'wma10', 'macd_d']
+# x_all_dscrete_cols = ['roc_d', 'rsi_d', 'cci_d', 'stod_d', 'stok_d', 'willr_d', 'mom_d']
+# #x_cols = ['roc', 'rsi', 'willr', 'obv', 'stok']#'mom', , 'cci',  'stod', 'macd', 'sma', 'sma50', 'wma']
+# #x_cols = ['roc']
+# x_cols = x_all_dscrete_cols + x_ma_cols
 X_subset = df[x_cols].values
 
 # Split
@@ -76,7 +87,10 @@ for key in all_scores[0].keys():
     mean_val = np.mean([d[key] for d in all_scores])
     print '- %s: %s' % (key, mean_val)
 
+print '====== Top feature imporance ======'
+m.print_feature_importance(rf, df[x_cols])
 
+print '====== Predict Scores ======'
 y_pred = rf.predict(X_test)
 # rf.score(yhat, y_test)
 
@@ -101,7 +115,7 @@ df_test['fp'] = (df_test['y_true'] != df_test['y_pred']) & (df_test['y_pred'] ==
 df_test['fn'] = (df_test['y_true'] != df_test['y_pred']) & (df_test['y_pred'] == 0)
 
 # df_test[['close', 'gain_loss', 'y_true', 'y_pred','tp','tn','fp','fn']]
-df_test[['close', 'gain_loss', 'y_true', 'y_pred', 'roc', 'sto', 'macd', 'willr', 'rsi']]
+df_test[['close', 'gain_loss', 'y_true', 'y_pred', 'roc', 'stok', 'macd', 'willr', 'rsi']]
 
 tp_gl_mean = df_test['gain_loss'][df_test['tp']].mean()
 tn_gl_mean = df_test['gain_loss'][df_test['tn']].mean()

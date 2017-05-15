@@ -97,6 +97,18 @@ class ModelUtils(object):
         print '        | %s | %s |' % (mat[1][0], mat[1][1])
         print '        ------------------'
 
+    def print_feature_importance(self, rf, df, n=10):
+        '''
+        Print the top n features
+
+        Input:  the random foreset model, dataframe of test data and columns, num features
+        '''
+        importances = rf.feature_importances_[:n]
+        features = list(df.columns[np.argsort(rf.feature_importances_[:n])])
+
+        print features
+        print np.sort(rf.feature_importances_)[::-1]
+
     def rmse(self, y, y_pred):
     	'''
         Compute Root-mean-squared-error
