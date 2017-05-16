@@ -1,9 +1,10 @@
-#
+###################################################################################################
 # Accounting
 #
 # Utilities for calculating the gain or loss from making or missing tades
 # based on model signal outputs
-#
+###################################################################################################
+
 from itertools import izip
 from sklearn.ensemble import GradientBoostingClassifier as GBC
 from sklearn.ensemble import RandomForestClassifier as RF

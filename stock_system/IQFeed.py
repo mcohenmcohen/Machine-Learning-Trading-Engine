@@ -1,5 +1,8 @@
-# https://www.quantstart.com/articles/Downloading-Historical-Intraday-US-Equities-From-DTN-IQFeed-with-Python
-# iqfeed.py
+###################################################################################################
+# Class DataFeed handles access to IQFeed
+# Refer to https://www.quantstart.com/articles/Downloading-Historical-Intraday-US-Equities-From-DTN-IQFeed-with-Python
+###################################################################################################
+
 import sys
 import socket
 import pandas as pd
@@ -7,7 +10,9 @@ import numpy as np
 
 
 class DataFeed(object):
-
+    '''
+    This class provides IQFeed data access services to retrieve stock symbol data
+    '''
     def __init__(self):
         self.sock = None
         self.symbols = []

@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, AdaB
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import train_test_split
 import sys
-from stock_system import DataUtils, ModelUtils, GridUtils, Accounting
+from stock_system import DataUtils, ModelUtils, GridUtils, Accounting, TA
 
 
 def get_features():
@@ -18,37 +18,12 @@ def get_features():
     # #x_cols = ['roc', 'rsi', 'willr', 'obv', 'stok']#'mom', , 'cci',  'stod', 'macd', 'sma', 'sma50', 'wma']
     # #x_cols = ['roc']
     # x_cols = x_all_dscrete_cols + x_ma_cols
-    return  x_cols
-
-
-def get_model():
-    model = RandomForestClassifier(
-       n_estimators=500,
-       max_depth=None,
-       min_samples_leaf=10,
-       max_features='log2',
-       bootstrap=False
-       #oob_score=True
-       )
-    # model = RandomForestRegressor(
-    #     n_estimators=500,
-    #     n_jobs=-1,
-    #     max_depth=None,
-    #     max_features='auto',
-    #     oob_score=True
-    # )
-    # model = AdaBoostRegressor(
-    #     n_estimators=500,
-    #     random_state=0,
-    #     learning_rate=0.1
-    # )
-
-    return model
+    return x_cols
 
 
 # Fit, train, and predit the model
 def run_once():
-    all_scores = m.predict_tscv(model, X_train, y_train)
+    all_scores = m.predict_tscv(model, X_train, y_train, print_on=True)
     print '====== Cross Val Mean Scores ======'
     for key in all_scores[0].keys():
         try:
@@ -70,8 +45,8 @@ def run_once():
 
     return y_pred
 
+
 def run_for_n_days_ahead(num_days):
-    model = get_model()
     scores_list = []
     for n in range(1,num_days+1):
         print '====== num days ahead: %s ======' % n
@@ -84,7 +59,7 @@ def run_for_n_days_ahead(num_days):
 
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
-        all_scores = m.print_scores(y_test, y_pred)
+        all_scores = m.get_scores(y_test, y_pred)
         # all_scores['predict_proba'] = model.predict_proba(X_test)
         m.print_standard_confusion_matrix(y_test, y_pred)
         m.print_feature_importance(model, df[get_features()])
@@ -105,7 +80,7 @@ df = db.read_symbol_data(symbol, 'd')
 # run expinential smoothing
 df = db.run_exp_smooth(df, alpha=.5)
 # run technical analysis, add columns
-df = db.run_techicals(df)
+df = TA.run_techicals(df)
 # subset out rows that have nan's
 # df = df[np.isfinite(df['macd_d'])]
 for name in df.columns:
@@ -125,12 +100,13 @@ y = df.pop('y_true').values
 X = df.values
 
 # Split
-X_train, X_test, y_train, y_test = m.simple_data_split(df[get_features()].values, y, test_set_size=100)
+X_train, X_test, y_train, y_test = m.simple_data_split(df[get_features()].values, y,
+                                                       test_set_size=int(df.shape[0]*.2))
 
 # Instantiate model(s)
 # Results from grid search
 # {'max_features': 'log2', 'n_estimators': 1000, 'min_samples_leaf': 10}
-model = get_model()
+model = m.get_model('rf')
 
 y_pred = run_once()
 

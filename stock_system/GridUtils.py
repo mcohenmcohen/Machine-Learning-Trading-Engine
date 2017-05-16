@@ -1,3 +1,7 @@
+###################################################################################################
+# Class to support grid searching
+###################################################################################################
+
 from sklearn.model_selection import GridSearchCV
 # from sklearn.metrics import f1_score
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
@@ -10,10 +14,17 @@ import timeit
 
 class GridSearcher(object):
     '''
-    Init with a list of (model, dict) tuples.
-    The dictionary for each model has parameters specific to that model.
+    This class provides services to support grid search on classifier models
+
+    init configures the parameters for each model
+    grid_search_reporter output the results of each models search
+    grid_search runs the search for one model
     '''
     def __init__(self):
+        '''
+        Init with a list of (model, dict) tuples.
+        The dictionary for each model has parameters specific to that model.
+        '''
         gd_boost = {
             'learning_rate': [1, 0.05, 0.02, 0.01],
             'max_depth': [2, 4, 6],

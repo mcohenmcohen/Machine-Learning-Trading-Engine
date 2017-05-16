@@ -1,6 +1,10 @@
-# ModelUtils
+###################################################################################################
+# Class provides functions to fit, cross validate, predict, score and print model stats
+###################################################################################################
+
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
@@ -12,9 +16,54 @@ from sklearn.model_selection import TimeSeriesSplit, cross_val_score, cross_val_
 
 
 class ModelUtils(object):
-
+    '''
+    Class provides functions to fit, cross validate, predict, score and print model stats
+    '''
     def __init__(self):
         self.models = []
+
+    def get_model(self, model_name='rf'):
+        '''
+        Return a model of the given name.  Parameter values are preset.
+        TODO: configurable parameters
+        '''
+        model_name = model_name.lower()
+        if model_name == 'rf' or model_name == 'rfc':
+            model = RandomForestClassifier(
+               n_estimators=500,
+               max_depth=None,
+               min_samples_leaf=10,
+               max_features='log2',
+               bootstrap=False
+               #oob_score=True
+               )
+        elif model_name == 'rfr':
+            model = RandomForestRegressor(
+                n_estimators=500,
+                n_jobs=-1,
+                max_depth=None,
+                max_features='auto',
+                oob_score=True
+                )
+        elif model_name == 'ab':
+            model = AdaBoostRegressor(
+                n_estimators=500,
+                random_state=0,
+                learning_rate=0.1
+                )
+        elif model_name == 'gb':
+            model = GradientBoostingRegressor(
+                n_estimators=500,
+                random_state=0,
+                learning_rate=0.1
+            )
+        elif model_name == 'svc':
+            model = SVC()
+        else:
+            raise ValueError("Invalid model specified.  Must be one of: \
+'rf', 'rfr', 'lr', 'ab', 'gb', 'svc'")
+
+        return model
 
     def simple_data_split(self, X, y, test_set_size=100):
         '''
@@ -42,7 +91,7 @@ class ModelUtils(object):
 
         return X_train, X_test, y_train, y_test
 
-    def print_scores(self, y_true, y_pred):
+    def get_scores(self, y_true, y_pred, print_on=False):
         '''
         Print all score, including the sklearn classification report
 
@@ -63,13 +112,15 @@ class ModelUtils(object):
             # met.append(m)
             met[metric.__name__] = m
             # scores[metric.__name__] = m
-            print metric.__name__, ' = ', m
+            if print_on:
+                print metric.__name__, ' = ', m
 
         # Print out of the box classification_report
-        try:
-            print classification_report(y_true, y_pred)
-        except:
-            print "Can't print classification report for regressor"
+        if print_on:
+            try:
+                print classification_report(y_true, y_pred)
+            except:
+                print "Can't print classification report for regressor"
 
         # return the list of metric scores
         return met
@@ -125,7 +176,7 @@ class ModelUtils(object):
         '''
     	return np.sqrt(np.mean((y - y_pred) ** 2))
 
-    def predict_tscv(self, model, X_train, y_train, num_folds=5):
+    def predict_tscv(self, model, X_train, y_train, num_folds=5, print_on=False):
         '''
         Run a time series cross validation on the model prediction
         '''
@@ -140,16 +191,18 @@ class ModelUtils(object):
             test = X_train[test_index]
             test_y = y_train[test_index]
 
-            print '===== Fitting model split %s =====' % (index+1)
+            if print_on:
+                print '===== Fitting model split %s =====' % (index+1)
             model.fit(train, train_y)
             pred = model.predict(test)
             error[index] = self.rmse(test_y, pred)
+            if print_on:
+                print 'train, test size: ', str(train_index.shape[0]) + ',', str(test_index.shape[0])
+                print '- rmse: ', error[index]
+            all_scores.append(self.get_scores(test_y, pred, print_on))
 
-            print 'train, test size: ', str(train_index.shape[0]) + ',', str(test_index.shape[0])
-            print '- rmse: ', error[index]
-            all_scores.append(self.print_scores(test_y, pred))
-
-            self.print_standard_confusion_matrix(test_y, pred)
+            if print_on:
+                self.print_standard_confusion_matrix(test_y, pred)
 
             index += 1
 
