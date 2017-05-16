@@ -48,7 +48,7 @@ class ModelUtils(object):
 
         Input:  y pred and true labels
         Output: Print all score values
-                A dict of the scores: key = metric name, value = score
+                and return a dict of the scores: key = metric name, value = score
 
         '''
         relevant_metrics = [precision_score, recall_score, accuracy_score, roc_auc_score,
@@ -56,14 +56,20 @@ class ModelUtils(object):
         # met = []
         met = {}
         for metric in relevant_metrics:
-            m = metric(y_true, y_pred)
+            try:
+                m = metric(y_true, y_pred)
+            except:
+                m = 'pass'
             # met.append(m)
             met[metric.__name__] = m
             # scores[metric.__name__] = m
             print metric.__name__, ' = ', m
 
         # Print out of the box classification_report
-        print classification_report(y_true, y_pred)
+        try:
+            print classification_report(y_true, y_pred)
+        except:
+            print "Can't print classification report for regressor"
 
         # return the list of metric scores
         return met
@@ -89,13 +95,17 @@ class ModelUtils(object):
                       | FN | TN |
                       -----------
         '''
-        mat = self.standard_confusion_matrix(y_true, y_pred)
-        print '              Actual'
-        print '        ------------------'
-        print '        | %s | %s |' % (mat[0][0], mat[0][1])
-        print 'Predict ------------------'
-        print '        | %s | %s |' % (mat[1][0], mat[1][1])
-        print '        ------------------'
+        try:
+            mat = self.standard_confusion_matrix(y_true, y_pred)
+            print '              Actual'
+            print '        ------------------'
+            print '        | %s | %s |' % (mat[0][0], mat[0][1])
+            print 'Predict ------------------'
+            print '        | %s | %s |' % (mat[1][0], mat[1][1])
+            print '        ------------------'
+        except:
+            print "Can't print confusion matrix for regressor"
+
 
     def print_feature_importance(self, rf, df, n=10):
         '''
@@ -138,6 +148,7 @@ class ModelUtils(object):
             print 'train, test size: ', str(train_index.shape[0]) + ',', str(test_index.shape[0])
             print '- rmse: ', error[index]
             all_scores.append(self.print_scores(test_y, pred))
+
             self.print_standard_confusion_matrix(test_y, pred)
 
             index += 1
