@@ -2,5 +2,7 @@
 **/*csv
 *.pyc
 **/*.pyc
-.ipynb
+*.ipynb
 **/*.ipynb
+*.bak.py
+**/*.bak.py
