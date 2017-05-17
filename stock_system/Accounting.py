@@ -20,6 +20,38 @@ import pandas as pd
 import warnings
 
 
+def get_abs_return(df):
+    '''
+    Calculations using close price:
+        For a dialy return, the prediction operates on the data available that day, and
+        sets the y_pred in that same row, which indicates up/or down the following day.
+        Thus, for accounting we assume that we follow the prediction to make a purchase
+        that day prior to the close, and we sell the following day prior to the close.
+
+    Input:
+        dataframe.  Must include the columns 'close', 'y_true', 'y_pred'
+    Output:
+        dataframe of gain and loss for each of tp, tn, fp, fn
+    '''
+    # Add a column for the daily price change for convenience
+    df['gain_loss'] = np.roll(df['close'], -1) - df['close']  # -1 for one day ahead
+    df['tp'] = ((df['y_true'] == 1) & (df['y_pred'] == 1)).astype(int)
+    df['fp'] = ((df['y_true'] == 0) & (df['y_pred'] == 1)).astype(int)
+    df['tn'] = ((df['y_true'] == 0) & (df['y_pred'] == 0)).astype(int)
+    df['fn'] = ((df['y_true'] == 1) & (df['y_pred'] == 0)).astype(int)
+
+    confusion_matrix = df[['tp','fp','tn','fn']].sum()
+
+    tp_total = df.groupby('tp').gain_loss.sum()[1]
+    fp_total = df.groupby('fp').gain_loss.sum()[1]
+    tn_total = df.groupby('tn').gain_loss.sum()[1]
+    fn_total = df.groupby('fn').gain_loss.sum()[1]
+
+    acct_mat = confusion_matrix.to_frame('Count')
+    acct_mat['Amount'] = np.array([tp_total,tn_total,fp_total,fn_total])
+
+    return acct_mat
+
 def get_cost_benefit_matrix(self, y_true, y_pred, gain_loss):
     '''
     Generate a cost_benefit matrix from mean total values associated with each of profit from.

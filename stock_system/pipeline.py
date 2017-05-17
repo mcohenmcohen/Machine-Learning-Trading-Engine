@@ -40,7 +40,7 @@ def run_once():
     # model.score(yhat, y_test)
 
     # Scores and confusion matrix
-    m.print_scores(y_test, y_pred)
+    m.get_scores(y_test, y_pred, print_on=True)
     m.print_standard_confusion_matrix(y_test, y_pred)
 
     return y_pred
@@ -88,7 +88,7 @@ for name in df.columns:
 # Imput - fillna with 0 for now...
 #df = df.fillna(0)
 # Number of days ahead to see if the price moved up or down
-days_ahead = -30
+days_ahead = -1
 df['gain_loss'] = np.roll(df['close'], days_ahead) - df['close']
 df['y_true'] = (df['gain_loss'] >= 0).astype(int)
 # Drop the last row?
@@ -97,10 +97,11 @@ df = df[:-1]
 ##############
 # Use only relevant columns for the model in X
 y = df.pop('y_true').values
-X = df.values
+X = df.values  # All columns of the original dataframe
+df_model_X = df[get_features()]  # Save off the model's X features as a dataframe
 
 # Split
-X_train, X_test, y_train, y_test = m.simple_data_split(df[get_features()].values, y,
+X_train, X_test, y_train, y_test = m.simple_data_split(df_model_X.values, y,
                                                        test_set_size=int(df.shape[0]*.2))
 
 # Instantiate model(s)
@@ -111,13 +112,21 @@ model = m.get_model('rf')
 y_pred = run_once()
 
 # # Recreate the original dataframe of test data including the predicted and true y labels
-# train_len = X_train.shape[0]
-# test_len = y_train.shape[0]
-# df_train = df[0:train_len].copy()
-# df_test = df[train_len:df.shape[0]].copy()
-# # Add back in the y_true and y_pred label columns
-# df_test['y_true'] = y_test
-# df_test['y_pred'] = y_pred
+train_len = X_train.shape[0]
+test_len = y_train.shape[0]
+df_train = df[0:train_len].copy()
+df_test = df[train_len:df.shape[0]].copy()
+# Add back in the y_true and y_pred label columns
+df_test['y_true'] = y_test
+df_test['y_pred'] = y_pred
+df_test['gain_loss'] = np.roll(df_test['close'], -1) - df_test['close']
+
+# Convenient subset of accounting
+cols_acc = ['date', 'close', 'gain_loss', 'y_true', 'y_pred']
+df_test = df_test[cols_acc]
+
+acct = Accounting.get_abs_return(df_test)
+print acct
 #
 # df_test['tp'] = (df_test['y_true'] == df_test['y_pred']) & (df_test['y_true'] == 1)
 # df_test['tn'] = (df_test['y_true'] == df_test['y_pred']) & (df_test['y_true'] == 0)

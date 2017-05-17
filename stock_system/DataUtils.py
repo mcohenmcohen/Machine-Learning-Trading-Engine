@@ -1,5 +1,5 @@
 ###################################################################################################
-# Class for accessing data
+# Class for accessing data from a database or other datasource, and other processing of data
 ###################################################################################################
 
 import numpy as np
