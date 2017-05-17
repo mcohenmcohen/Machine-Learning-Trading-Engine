@@ -4,21 +4,9 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, AdaB
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import train_test_split
 import sys
-from stock_system import DataUtils, ModelUtils, GridUtils, Accounting, TA
-
-
-def get_features():
-    x_cols = ['roc', 'rsi', 'willr', 'obv', 'stok']
-    # Oscilators
-    # x_osc = ['rsi', 'cci', 'stod', 'stok', 'willr']
-    # x_oscd_cols = ['rsi_d', 'cci_d', 'stod_d', 'stok_d', 'willr_d']
-    # # MAs
-    # x_ma_cols = ['sma20', 'sma50', 'sma200', 'wma10', 'macd_d']
-    # x_all_dscrete_cols = ['roc_d', 'rsi_d', 'cci_d', 'stod_d', 'stok_d', 'willr_d', 'mom_d']
-    # #x_cols = ['roc', 'rsi', 'willr', 'obv', 'stok']#'mom', , 'cci',  'stod', 'macd', 'sma', 'sma50', 'wma']
-    # #x_cols = ['roc']
-    # x_cols = x_all_dscrete_cols + x_ma_cols
-    return x_cols
+from stock_system import DataUtils
+from stock_system import ModelUtils, GridUtils, Accounting, TA
+from stock_system import TradingSystem_Khaidem
 
 
 # Fit, train, and predit the model
@@ -33,7 +21,7 @@ def run_once():
             pass
 
     print '====== Top feature imporance ======'
-    m.print_feature_importance(model, df[get_features()])
+    m.print_feature_importance(model, df[ts.get_features()])
 
     print '====== Predict Scores ======'
     y_pred = model.predict(X_test)
@@ -48,21 +36,22 @@ def run_once():
 
 def run_for_n_days_ahead(num_days):
     scores_list = []
-    for n in range(1,num_days+1):
+    for n in range(1, num_days+1):
         print '====== num days ahead: %s ======' % n
         days_ahead = -n
         df['gain_loss'] = np.roll(df['close'], days_ahead) - df['close']
         df['y_true'] = (df['gain_loss'] >= 0).astype(int)
         y = df.pop('y_true').values
-        X = df.values
-        X_train, X_test, y_train, y_test = m.simple_data_split(df[get_features()].values, y, test_set_size=int(df.shape[0]*.2))
+        X = df[features].values
+        X_train, X_test, y_train, y_test = m.simple_data_split(X, y,
+                                                               test_set_size=int(df.shape[0]*.2))
 
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
         all_scores = m.get_scores(y_test, y_pred)
         # all_scores['predict_proba'] = model.predict_proba(X_test)
         m.print_standard_confusion_matrix(y_test, y_pred)
-        m.print_feature_importance(model, df[get_features()])
+        m.print_feature_importance(model, df[ts.get_features()])
         scores_list.append(all_scores)
 
     return scores_list
@@ -70,52 +59,38 @@ def run_for_n_days_ahead(num_days):
 
 db = DataUtils.DataUtils()
 m = ModelUtils.ModelUtils()
+ts = TradingSystem_Khaidem.TradingSystem_Khaidem()
 
 symbol = sys.argv[1:][0] if len(sys.argv[1:]) > 0 else 'SPY'
 print 'Fitting for symbol: ', symbol
 
 # get stock data from db as dataframe
-# df = db.read_symbol_data("Select * from symbols where symbol='FB' limit 100") # Dummy data
 df = db.read_symbol_data(symbol, 'd')
-# run expinential smoothing
-df = db.run_exp_smooth(df, alpha=.5)
-# run technical analysis, add columns
-df = TA.run_techicals(df)
-# subset out rows that have nan's
-# df = df[np.isfinite(df['macd_d'])]
-for name in df.columns:
-    df = df[df[name].notnull()]
-# Imput - fillna with 0 for now...
-#df = df.fillna(0)
-# Number of days ahead to see if the price moved up or down
-days_ahead = -1
-df['gain_loss'] = np.roll(df['close'], days_ahead) - df['close']
-df['y_true'] = (df['gain_loss'] >= 0).astype(int)
-# Drop the last row?
-df = df[:-1]
+# Using the tradng system, preprocess the data for it
+df = ts.preprocess_data(df)
+# Using the tradng system, generate the y column
+df = ts.generate_target()
+# Get the featuers for the trading system
+features = ts.get_features()
 
 ##############
 # Use only relevant columns for the model in X
 y = df.pop('y_true').values
 X = df.values  # All columns of the original dataframe
-df_model_X = df[get_features()]  # Save off the model's X features as a dataframe
+df_model_X = df[features]  # Save off the model's X features as a dataframe
 
 # Split
 X_train, X_test, y_train, y_test = m.simple_data_split(df_model_X.values, y,
                                                        test_set_size=int(df.shape[0]*.2))
-
 # Instantiate model(s)
-# Results from grid search
-# {'max_features': 'log2', 'n_estimators': 1000, 'min_samples_leaf': 10}
 model = m.get_model('rf')
-
+# Predict
 y_pred = run_once()
 
+# ##### For Accounting ######
 # # Recreate the original dataframe of test data including the predicted and true y labels
-train_len = X_train.shape[0]
-test_len = y_train.shape[0]
-df_train = df[0:train_len].copy()
-df_test = df[train_len:df.shape[0]].copy()
+# df_train = df[0:X_train.shape[0]].copy()
+df_test = df[X_train.shape[0]:df.shape[0]].copy()
 # Add back in the y_true and y_pred label columns
 df_test['y_true'] = y_test
 df_test['y_pred'] = y_pred
@@ -127,19 +102,7 @@ df_test = df_test[cols_acc]
 
 acct = Accounting.get_abs_return(df_test)
 print acct
-#
-# df_test['tp'] = (df_test['y_true'] == df_test['y_pred']) & (df_test['y_true'] == 1)
-# df_test['tn'] = (df_test['y_true'] == df_test['y_pred']) & (df_test['y_true'] == 0)
-# df_test['fp'] = (df_test['y_true'] != df_test['y_pred']) & (df_test['y_pred'] == 1)
-# df_test['fn'] = (df_test['y_true'] != df_test['y_pred']) & (df_test['y_pred'] == 0)
-#
-# # df_test[['close', 'gain_loss', 'y_true', 'y_pred','tp','tn','fp','fn']]
-# df_test[['close', 'gain_loss', 'y_true', 'y_pred', 'roc', 'stok', 'macd', 'willr', 'rsi']]
-#
-# tp_gl_mean = df_test['gain_loss'][df_test['tp']].mean()
-# tn_gl_mean = df_test['gain_loss'][df_test['tn']].mean()
-# fp_gl_mean = df_test['gain_loss'][df_test['fp']].mean()
-# fn_gl_mean = df_test['gain_loss'][df_test['fn']].mean()
+
 #
 # # Do the accounting
 # # Compute the gain and loss of each tp, fp, tn, fn

@@ -80,6 +80,7 @@ def discrete_series_compare(series_a, series_b):
     '''
     x = (series_a > series_b).astype(int)
     x[x == 0] = -1
+
     return x
 
 
@@ -92,6 +93,7 @@ def discrete_series_pos_neg(series):
     '''
     x = (series > 0).astype(int)
     x[x == 0] = -1
+
     return x
 
 
@@ -103,6 +105,7 @@ def discrete_trend(series):
     diff = np.diff(series)
     diff[diff > 0] = 1
     diff[diff <= 0] = -1
+
     return np.append(0, diff)
 
 
@@ -125,3 +128,42 @@ def continuous_to_discrete_w_bounds(series, lower_bound, upper_bound):
     d[d == -2] = 1
 
     return d
+
+
+# def run_exp_smooth(self, df, **kwparams):
+def run_exp_smooth(df, alpha):
+    '''
+    Exponential smoothing via pandas.
+        http://pandas-docs.github.io/pandas-docs-travis/computation.html#exponentially-weighted-windows
+
+        One must specify precisely one of span, center of mass, half-life
+        and alpha to the EW functions
+    '''
+    # df['exp_smooth'] = pd.ewma(df['close'].values, kwparams)
+    df['exp_smooth_open'] = pd.ewma(df['open'].values, alpha)
+    df['exp_smooth_high'] = pd.ewma(df['high'].values, alpha)
+    df['exp_smooth_low'] = pd.ewma(df['low'].values, alpha)
+    df['exp_smooth_close'] = pd.ewma(df['close'].values, alpha)
+    df['exp_smooth_volume'] = pd.ewma(df['volume'].values, alpha)
+
+    return df
+
+
+def run_holt_winters_second_order_ewma(series, period, beta):
+    '''
+    Holt-Winters exponential smoothing
+        http://connor-johnson.com/2014/02/01/smoothing-with-exponentially-weighted-moving-averages/
+
+    input:  the series, the MA period, the beta param
+    output: return the smoothed
+    '''
+    N = series.size
+    alpha = 2.0 / (1 + period)
+    s = np.zeros((N, ))
+    b = np.zeros((N, ))
+    s[0] = series[0]
+    for i in range(1, N):
+        s[i] = alpha * series[i] + (1 - alpha) * (s[i-1] + b[i-1])
+        b[i] = beta * (s[i] - s[i-1]) + (1 - beta) * b[i-1]
+
+    return s
