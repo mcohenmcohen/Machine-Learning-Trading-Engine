@@ -1,6 +1,7 @@
 ###################################################################################################
 # Parent class for trading systems
 ###################################################################################################
+import numpy as np
 from minepy import MINE
 from sklearn.feature_selection import RFE
 import inspect
@@ -37,15 +38,19 @@ class TradingSystem(object):
         '''
         pass
 
-    def feature_selection(self):
+    def feature_forensics(self):
+        print '====== Identify to Remove highly correlated variables ======'
         self.check_corr()
+        print '====== Feature selection via Maximal Information Coefficient (MIC) ======'
+        self.check_mic()
 
     def check_corr(self):
         '''
         Get/print a correlation matrix to assist in identifying correlated columns
         '''
-        #df = self.df.select_dtypes(['number'])  # Use only numeric columns
-        df = self.df[self.get_features()]  # Use only sub set features
+        # df = self.df.select_dtypes(['number'])  # Use only numeric columns
+        df = self.df.copy()
+        df = df[self.get_features()]  # Use only sub set features
         print("Correlation Matrix")
         print(df.corr())
         print()
@@ -82,31 +87,36 @@ class TradingSystem(object):
 
         TODO - float to int bug
         '''
-        df = self.df
+        #import pdb; pdb.set_trace()
+        df = self.df.copy()
 
-        def print_stats(mine):
-            print "MIC", mine.mic()
-            print "MAS", mine.mas()
-            print "MEV", mine.mev()
-            print "MCN (eps=0)", mine.mcn(0)
-            print "MCN (eps=1-MIC)", mine.mcn_general()
+        def print_stats(mine, feature):
+            print "%s MIC: %s" % (feature, mine.mic())
+            # print "MAS", mine.mas()
+            # print "MEV", mine.mev()
+            # print "MCN (eps=0)", mine.mcn(0)
+            # print "MCN (eps=1-MIC)", mine.mcn_general()
 
-        x = df[self.features]
+        features = df[self.get_features()]
+        #features = df['deltabWidth310']
         try:
-            y = df['target']
+            y = df['y_true']
         except KeyError:
             print "%s.%s: Data has no 'target' column.  Exiting." % (__name__, inspect.currentframe().f_code.co_name)
             return
-        mine = MINE(alpha=0.6, c=15)
-        mine.compute_score(x, y)
+        #import pdb; pdb.set_trace()
+        for feature in features:
+            #print '--- MIC for feature "%s" vs "y_true" ---' % feature
+            x = df[feature]
+            mine = MINE(alpha=0.6, c=15)
+            mine.compute_score(x, y)
 
-        print "Without noise:"
-        print_stats(mine)
-        print
+            #print "Without noise:"
+            #print_stats(mine, feature)
 
-        np.random.seed(0)
-        y +=np.random.uniform(-1, 1, x.shape[0]) # add some noise
-        mine.compute_score(x, y)
+            np.random.seed(0)
+            y +=np.random.uniform(-1, 1, x.shape[0]) # add some noise
+            mine.compute_score(x, y)
 
-        print "With noise:"
-        print_stats(mine)
+            #print "With noise:"
+            print_stats(mine, feature)

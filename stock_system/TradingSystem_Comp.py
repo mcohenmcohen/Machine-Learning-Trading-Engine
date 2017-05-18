@@ -120,7 +120,7 @@ class TradingSystem_Comp(TradingSystem):
         df2 = (df-df.min())/(df.max()-df.min())
         # - TODO a rolling 50 period window of normalizing, rather than the whole df.  rolling.apply
 
-        self.df = df
+        self.df = df2
 
         return self.df
 
@@ -142,9 +142,8 @@ class TradingSystem_Comp(TradingSystem):
         # x_cols = x_all_dscrete_cols + x_ma_cols
         return self.features
 
-    def feature_selection(self):
-        return TradingSystem.feature_selection(self)
-
+    def feature_forensics(self):
+        return TradingSystem.feature_forensics(self)
 
     def generate_target(self):
         '''

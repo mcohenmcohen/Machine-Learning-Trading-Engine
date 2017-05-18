@@ -70,10 +70,10 @@ df = db.read_symbol_data(symbol, 'd')
 
 # Using the tradng system, preprocess the data for it
 df = ts.preprocess_data(df)
-ts.feature_selection()
 # Using the tradng system, generate the y column
-#df = pd.read_csv('/Users/mcohen/Dev/Trading/Robot Wealth/ML_Scripts_and_Data/eu_daily_midnight.csv')
+# df = pd.read_csv('/Users/mcohen/Dev/Trading/Robot Wealth/ML_Scripts_and_Data/eu_daily_midnight.csv')
 df = ts.generate_target()
+ts.feature_forensics()
 
 # Do feature estimation
 # Get the featuers for the trading system
