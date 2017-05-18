@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import talib
 # https://github.com/mrjbq7/ta-lib
+# index - https://github.com/mrjbq7/ta-lib/blob/master/docs/index.md
 # documentation: https://github.com/mrjbq7/ta-lib/blob/master/docs/func.md
 
 
@@ -134,13 +135,15 @@ def continuous_to_discrete_w_bounds(series, lower_bound, upper_bound):
 def run_exp_smooth(df, alpha):
     '''
     Exponential smoothing via pandas.
-        http://pandas-docs.github.io/pandas-docs-travis/computation.html#exponentially-weighted-windows
+        http://pandas.pydata.org/pandas-docs/stable/computation.html
+        deprecated: http://pandas-docs.github.io/pandas-docs-travis/computation.html#exponentially-weighted-windows
 
         One must specify precisely one of span, center of mass, half-life
         and alpha to the EW functions
     '''
     # df['exp_smooth'] = pd.ewma(df['close'].values, kwparams)
     df['exp_smooth_open'] = pd.ewma(df['open'].values, alpha)
+    # df['exp_smooth_open'] = df['open'].ewm(span=20).mean()
     df['exp_smooth_high'] = pd.ewma(df['high'].values, alpha)
     df['exp_smooth_low'] = pd.ewma(df['low'].values, alpha)
     df['exp_smooth_close'] = pd.ewma(df['close'].values, alpha)
@@ -167,3 +170,45 @@ def run_holt_winters_second_order_ewma(series, period, beta):
         b[i] = beta * (s[i] - s[i-1]) + (1 - beta) * b[i-1]
 
     return s
+
+from numpy import cumsum, log, polyfit, sqrt, std, subtract
+from numpy.random import randn
+
+def hurst(ts):
+    '''
+    Returns the Hurst Exponent of the time series vector ts
+
+    eg, Call the function
+        hurst(df['close'])
+
+    https://www.quantstart.com/articles/Basics-of-Statistical-Mean-Reversion-Testing
+    '''
+    # Create the range of lag values
+    lags = range(2, 100)
+
+    # Calculate the array of the variances of the lagged differences
+    # Here it calculates the variances, but why it uses
+    # standard deviation and then make a root of it?
+    tau = [np.sqrt(np.std(np.subtract(ts[lag:], ts[:-lag]))) for lag in lags]
+
+    # Use a linear fit to estimate the Hurst Exponent
+    poly = np.polyfit(np.log(lags), np.log(tau), 1)
+
+    # Return the Hurst exponent from the polyfit output
+    return poly[0]*2.0
+
+    # Example:
+    # # Create a Gometric Brownian Motion, Mean-Reverting and Trending Series
+    # gbm = log(np.cumsum(randn(100000))+1000)
+    # mr = log(np.random.randn(100000)+1000)
+    # tr = log(np.cumsum(randn(100000)+1)+1000)
+    #
+    # # Output the Hurst Exponent for each of the above series
+    # # and the price of Google (the Adjusted Close price) for
+    # # the ADF test given above in the article
+    # print "Hurst(GBM):   %s" % hurst(gbm)
+    # print "Hurst(MR):    %s" % hurst(mr)
+    # print "Hurst(TR):    %s" % hurst(tr)
+    #
+    # # Assuming you have run the above code to obtain 'goog'!
+    # print "Hurst(GOOG):  %s" % hurst(goog['Adj Close'])

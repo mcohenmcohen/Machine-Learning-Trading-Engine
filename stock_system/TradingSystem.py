@@ -13,6 +13,7 @@ class TradingSystem(object):
     '''
     def __init__(self):
         self.name = ''  # An optional name
+        self.features = []
 
     def preprocess_data(self):
         '''
@@ -36,11 +37,15 @@ class TradingSystem(object):
         '''
         pass
 
+    def feature_selection(self):
+        self.check_corr()
+
     def check_corr(self):
         '''
         Get/print a correlation matrix to assist in identifying correlated columns
         '''
-        df = self.data.select_dtypes(['number'])  # Use only numeric columns
+        #df = self.df.select_dtypes(['number'])  # Use only numeric columns
+        df = self.df[self.get_features()]  # Use only sub set features
         print("Correlation Matrix")
         print(df.corr())
         print()
@@ -77,7 +82,7 @@ class TradingSystem(object):
 
         TODO - float to int bug
         '''
-        df = self.data
+        df = self.df
 
         def print_stats(mine):
             print "MIC", mine.mic()
@@ -86,7 +91,7 @@ class TradingSystem(object):
             print "MCN (eps=0)", mine.mcn(0)
             print "MCN (eps=1-MIC)", mine.mcn_general()
 
-        x = df[self.x_cols]
+        x = df[self.features]
         try:
             y = df['target']
         except KeyError:

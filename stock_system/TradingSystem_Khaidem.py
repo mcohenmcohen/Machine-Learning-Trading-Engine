@@ -1,5 +1,5 @@
 ###################################################################################################
-# Parent class for trading systems
+# Trading System to replicate study
 ###################################################################################################
 import numpy as np
 from minepy import MINE
@@ -65,7 +65,9 @@ class TradingSystem_Khaidem(TradingSystem):
         days_ahead = -1
         self.df['gain_loss'] = np.roll(self.df['close'], days_ahead) - self.df['close']
         self.df['y_true'] = (self.df['gain_loss'] >= 0).astype(int)
-        # Drop the last row?
+
+        # Drop the last row becaue of the shift by 1 - it puts the first to the last
+        # Probably needs to change
         self.df = self.df[:-1]
 
         return self.df

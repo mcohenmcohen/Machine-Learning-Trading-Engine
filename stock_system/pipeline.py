@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 import sys
 from stock_system import DataUtils
 from stock_system import ModelUtils, GridUtils, Accounting, TA
-from stock_system import TradingSystem_Khaidem
+from stock_system import TradingSystem_Comp, TradingSystem_Khaidem
 
 
 # Fit, train, and predit the model
@@ -59,17 +59,23 @@ def run_for_n_days_ahead(num_days):
 
 db = DataUtils.DataUtils()
 m = ModelUtils.ModelUtils()
-ts = TradingSystem_Khaidem.TradingSystem_Khaidem()
+ts = TradingSystem_Comp.TradingSystem_Comp()
+# ts = TradingSystem_Khaidem.TradingSystem_Khaidem()
 
 symbol = sys.argv[1:][0] if len(sys.argv[1:]) > 0 else 'SPY'
 print 'Fitting for symbol: ', symbol
 
 # get stock data from db as dataframe
 df = db.read_symbol_data(symbol, 'd')
+
 # Using the tradng system, preprocess the data for it
 df = ts.preprocess_data(df)
+ts.feature_selection()
 # Using the tradng system, generate the y column
+#df = pd.read_csv('/Users/mcohen/Dev/Trading/Robot Wealth/ML_Scripts_and_Data/eu_daily_midnight.csv')
 df = ts.generate_target()
+
+# Do feature estimation
 # Get the featuers for the trading system
 features = ts.get_features()
 
@@ -90,14 +96,16 @@ y_pred = run_once()
 # ##### For Accounting ######
 # # Recreate the original dataframe of test data including the predicted and true y labels
 # df_train = df[0:X_train.shape[0]].copy()
-df_test = df[X_train.shape[0]:df.shape[0]].copy()
+df_test = df[X_train.shape[0]:].copy()
 # Add back in the y_true and y_pred label columns
 df_test['y_true'] = y_test
 df_test['y_pred'] = y_pred
 df_test['gain_loss'] = np.roll(df_test['close'], -1) - df_test['close']
 
 # Convenient subset of accounting
-cols_acc = ['date', 'close', 'gain_loss', 'y_true', 'y_pred']
+df['gain_loss'] = np.roll(df_test['close'], 1) - df_test['close']
+# cols_acc = ['date', 'close', 'gain_loss', 'y_true', 'y_pred']
+cols_acc = ['close', 'gain_loss', 'y_true', 'y_pred']
 df_test = df_test[cols_acc]
 
 acct = Accounting.get_abs_return(df_test)
