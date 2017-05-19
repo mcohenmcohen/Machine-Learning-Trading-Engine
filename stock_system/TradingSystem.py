@@ -39,21 +39,22 @@ class TradingSystem(object):
         '''
         pass
 
-    def feature_forensics(self, model):
+    def feature_forensics(self, model, rfe_num_feat):
         print '====== Identify to Remove highly correlated variables ======'
-        self.check_corr()
+        self.check_corr(self.get_features())
         print '====== Feature selection via Maximal Information Coefficient (MIC) ======'
         self.check_mic()
         print '====== Recursive Feature Extraction ======'
-        self.check_rfe(model)
+        self.check_rfe(model, rfe_num_feat)
 
-    def check_corr(self):
+    def check_corr(self, feature_set):
         '''
         Get/print a correlation matrix to assist in identifying correlated columns
         '''
         # df = self.df.select_dtypes(['number'])  # Use only numeric columns
         df = self.df.copy()
-        df = df[self.get_features()]  # Use only sub set features
+        #import pdb; pdb.set_trace()
+        df = df[feature_set]  # Use only sub set features
         print("Correlation Matrix")
         print(df.corr())
         print()
@@ -77,6 +78,9 @@ class TradingSystem(object):
 
         print("Top Absolute Correlations")
         print(get_top_abs_correlations(df, 100))
+
+        return (df.corr(), get_top_abs_correlations(df, 100))
+
 
     def check_mic(self):
         '''
@@ -124,15 +128,15 @@ class TradingSystem(object):
             #print "With noise:"
             print_stats(mine, feature)
 
-    def check_rfe(self, model):
+    def check_rfe(self, model, num_top_features):
         print '- model: ', model.__class__
         df = self.df.copy()
-
+        #import pdb; pdb.set_trace()
         X = df.ix[:,6:].copy()
         y = X.pop('y_true')
 
         estimator = model
-        selector = RFE(estimator, 6, step=1)
+        selector = RFE(estimator, num_top_features, step=1)
         selector = selector.fit(X, y)
 
         selector.support_

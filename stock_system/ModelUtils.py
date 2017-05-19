@@ -20,7 +20,7 @@ class ModelUtils(object):
     Class provides functions to fit, cross validate, predict, score and print model stats
     '''
     def __init__(self):
-        self.model_list = 'rfc,rfr,abr,gbr,knn,svc,svr,linr,logr,lasso,ridge'.split(',')
+        self.model_list = 'rfc,rfr,abc,abr,gbc,gbr,knn,svc,svr,linr,logr,lasso,ridge'.split(',')
 
     def get_model_list(self):
         return self.model_list
@@ -48,12 +48,16 @@ class ModelUtils(object):
                 max_features='auto',
                 oob_score=True
                 )
+        elif model_name == 'abc':
+            model = AdaBoostClassifier()
         elif model_name == 'abr':
             model = AdaBoostRegressor(
                 n_estimators=500,
                 random_state=0,
                 learning_rate=0.1
                 )
+        elif model_name == 'gbc':
+            model = GradientBoostingClassifier()
         elif model_name == 'gbr':
             model = GradientBoostingRegressor(
                 n_estimators=500,
@@ -150,8 +154,11 @@ class ModelUtils(object):
         Output:
             ndarray - 2D
         '''
-        [[tn, fp], [fn, tp]] = confusion_matrix(y_true, y_pred)
-        return np.array([[tp, fp], [fn, tn]])
+        try:
+            [[tn, fp], [fn, tp]] = confusion_matrix(y_true, y_pred)
+            return np.array([[tp, fp], [fn, tn]])
+        except:
+            return np.zeros((2,2))
 
     def print_standard_confusion_matrix(self, y_true, y_pred):
         '''
@@ -174,17 +181,22 @@ class ModelUtils(object):
             print "Can't print confusion matrix for regressor"
 
 
-    def print_feature_importance(self, rf, df, n=10):
+    def print_feature_importance(self, model, df, n=10):
         '''
         Print the top n features
 
-        Input:  the random foreset model, dataframe of test data and columns, num features
+        Input:  the (random foreset) model, dataframe of test data and columns, num features
         '''
-        importances = rf.feature_importances_[:n]
-        features = list(df.columns[np.argsort(rf.feature_importances_[:n])])
+        try:
+            importances = model.feature_importances_[:n]
+            features = list(df.columns[np.argsort(model.feature_importances_[:n])])
+            print features
+            print np.sort(model.feature_importances_)[::-1]
+        except:
+            print 'Model %s has no feature importance data' % model.__class__
+            features = []
 
-        print features
-        print np.sort(rf.feature_importances_)[::-1]
+
 
     def rmse(self, y, y_pred):
     	'''
