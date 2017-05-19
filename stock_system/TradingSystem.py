@@ -4,6 +4,7 @@
 import numpy as np
 from minepy import MINE
 from sklearn.feature_selection import RFE
+from sklearn.ensemble import RandomForestClassifier
 import inspect
 from stock_system import TA, ModelUtils
 
@@ -38,11 +39,13 @@ class TradingSystem(object):
         '''
         pass
 
-    def feature_forensics(self):
+    def feature_forensics(self, model):
         print '====== Identify to Remove highly correlated variables ======'
         self.check_corr()
         print '====== Feature selection via Maximal Information Coefficient (MIC) ======'
         self.check_mic()
+        print '====== Recursive Feature Extraction ======'
+        self.check_rfe(model)
 
     def check_corr(self):
         '''
@@ -115,8 +118,28 @@ class TradingSystem(object):
             #print_stats(mine, feature)
 
             np.random.seed(0)
-            y +=np.random.uniform(-1, 1, x.shape[0]) # add some noise
+            y += np.random.uniform(-1, 1, x.shape[0]) # add some noise
             mine.compute_score(x, y)
 
             #print "With noise:"
             print_stats(mine, feature)
+
+    def check_rfe(self, model):
+        print '- model: ', model.__class__
+        df = self.df.copy()
+
+        X = df.ix[:,6:].copy()
+        y = X.pop('y_true')
+
+        estimator = model
+        selector = RFE(estimator, 6, step=1)
+        selector = selector.fit(X, y)
+
+        selector.support_
+
+        selected_features = []
+        for i in np.argsort(selector.ranking_):
+            selected_features.append(X.columns[i])
+            print X.columns[i]
+
+        return selected_features

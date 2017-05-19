@@ -6,3 +6,5 @@
 **/*.ipynb
 *.bak.py
 **/*.bak.py
+*.png
+**/*.png

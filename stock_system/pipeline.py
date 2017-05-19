@@ -4,8 +4,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, AdaB
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import train_test_split
 import sys
-from stock_system import DataUtils
-from stock_system import ModelUtils, GridUtils, Accounting, TA
+from stock_system import DataUtils, ModelUtils, GridUtils, Accounting, TA
 from stock_system import TradingSystem_Comp, TradingSystem_Khaidem
 
 
@@ -73,7 +72,14 @@ df = ts.preprocess_data(df)
 # Using the tradng system, generate the y column
 # df = pd.read_csv('/Users/mcohen/Dev/Trading/Robot Wealth/ML_Scripts_and_Data/eu_daily_midnight.csv')
 df = ts.generate_target()
-ts.feature_forensics()
+
+# Instantiate model(s)
+model = m.get_model('rfc')
+# Run feature engineering/forensics.
+# ts.feature_forensics(model)
+ts.check_corr()
+ts.check_mic()
+# ts.check_rfe(model)
 
 # Do feature estimation
 # Get the featuers for the trading system
@@ -88,8 +94,7 @@ df_model_X = df[features]  # Save off the model's X features as a dataframe
 # Split
 X_train, X_test, y_train, y_test = m.simple_data_split(df_model_X.values, y,
                                                        test_set_size=int(df.shape[0]*.2))
-# Instantiate model(s)
-model = m.get_model('rf')
+
 # Predict
 y_pred = run_once()
 

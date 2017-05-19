@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier,
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC
+from sklearn.svm import SVC, SVR
 from sklearn.linear_model import Ridge, Lasso, LinearRegression, LogisticRegression
 from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score
 from sklearn.metrics import mean_squared_error, r2_score, f1_score, confusion_matrix
@@ -20,7 +20,10 @@ class ModelUtils(object):
     Class provides functions to fit, cross validate, predict, score and print model stats
     '''
     def __init__(self):
-        self.models = []
+        self.model_list = 'rfc,rfr,abr,gbr,knn,svc,svr,linr,logr,lasso,ridge'.split(',')
+
+    def get_model_list(self):
+        return self.model_list
 
     def get_model(self, model_name='rf'):
         '''
@@ -28,7 +31,7 @@ class ModelUtils(object):
         TODO: configurable parameters
         '''
         model_name = model_name.lower()
-        if model_name == 'rf' or model_name == 'rfc':
+        if model_name == 'rfc' or model_name == 'rfc':
             model = RandomForestClassifier(
                n_estimators=500,
                max_depth=None,
@@ -45,23 +48,36 @@ class ModelUtils(object):
                 max_features='auto',
                 oob_score=True
                 )
-        elif model_name == 'ab':
+        elif model_name == 'abr':
             model = AdaBoostRegressor(
                 n_estimators=500,
                 random_state=0,
                 learning_rate=0.1
                 )
-        elif model_name == 'gb':
+        elif model_name == 'gbr':
             model = GradientBoostingRegressor(
                 n_estimators=500,
                 random_state=0,
                 learning_rate=0.1
             )
+        elif model_name == 'knn':
+            model = KNeighborsClassifier()
         elif model_name == 'svc':
             model = SVC()
+        elif model_name == 'svr':
+            model = SVR()
+        elif model_name == 'linr':
+            model = LinearRegression()
+        elif model_name == 'logr':
+            model = LogisticRegression()
+        elif model_name == 'lasso':
+            model = Lasso()
+        elif model_name == 'ridge':
+            model = Ridge()
+
         else:
-            raise ValueError("Invalid model specified.  Must be one of: \
-'rf', 'rfr', 'lr', 'ab', 'gb', 'svc'")
+            err = 'Invalid model specified.  Must be one of: %s' % self.model_list
+            raise ValueError(err)
 
         return model
 
