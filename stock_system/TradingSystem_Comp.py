@@ -49,12 +49,6 @@ class TradingSystem_Comp(TradingSystem):
         mean_log_close_5 = np.log(close.rolling(window=5).mean())
         df['apc5'] = mean_log_close_5 / talib.ATR(high.values, low.values, np.log(close).values, timeperiod=100)
 
-        # Can play with short and long time preiods...
-        r5 = df.close.rolling(window=5)
-        r10 = df.close.rolling(window=10)
-        r20 = df.close.rolling(window=20)
-        r30 = df.close.rolling(window=30)
-
         # from article post
         #import pdb; pdb.set_trace()
         daily_return = close - close.shift(1)  # today - yesterday close
@@ -81,7 +75,7 @@ class TradingSystem_Comp(TradingSystem):
         df['deltabWidth33'] = df['bWidth3'] - np.roll(df['bWidth3'], 3)
         df['deltabWidth310'] = df['bWidth3'] - np.roll(df['bWidth3'], 10)
 
-        df['price_var_ratio'] = r10.var() / r30.var()
+        df['price_var_ratio'] = df.close.rolling(window=10).var() / df.close.rolling(window=30).var()
         df['deltaPVR5'] = df['price_var_ratio'] - np.roll(df['price_var_ratio'], 5)
         #df['hurst'] = TA.hurst(close)
         df['willr'] = talib.WILLR(high.values, low.values, close.values, timeperiod=14)
@@ -101,19 +95,30 @@ class TradingSystem_Comp(TradingSystem):
             return x[-1]
 
         # Non-normalized columns
+        # stats
         df['roc'] = TA.rate_of_change(close, 1)  # highly correlated with daily returns
         df['slope20'] = df['close'].rolling(window=20).apply(TA.slope_calc)
         df['velocity'] = df['close'] + (df['slope20'] * df['close']) / 20
         df['stdClose20'] = df['close'].shift(1).rolling(window=20).std()
         df['zscore'] = (df['close'] - df['close'].shift(1).rolling(window=20).mean()) / df['stdClose20']
-        # Candle Size
-        vol30 = df['volume'].rolling(window=30).mean()
+        # Candle and volume Size
+        vol30 = df['volume'].shift(1).rolling(window=30).mean()
+        relVolSize = df['volume'] / vol30
+        relVolSize[np.isnan(relVolSize)] = 0  # impute inf to 0
+        df['relVolSize'] = relVolSize
         cSize = (df['close'] - df['open']).abs()
         cSize30 = cSize.shift(1).rolling(window=30).mean()
         relCanSize = cSize / cSize30
-        relCanSize[np.isinf(relCanSize)] = 0  # impute inf to 0
+        relCanSize[np.isnan(relCanSize)] = 0  # impute inf to 0
         df['relCanSize'] = relCanSize
-
+        # MA discrete series
+        # df['MACurOver3'] = (df['close'] > df['close'].shift(1).rolling(window=3).mean()).astype(int)
+        # df['MA3Over5'] = (df['close'].rolling(window=3).mean() > df['close'].shift(1).rolling(window=5).mean()).astype(int)
+        # df['MA5Over10'] = (df['close'].rolling(window=5).mean() > df['close'].shift(1).rolling(window=10).mean()).astype(int)
+        # df['MA5ver20'] = (df['close'].rolling(window=5).mean() > df['close'].shift(1).rolling(window=20).mean()).astype(int)
+        # Last n days
+        df['twoDownDays'] = ((df['close'] < df['close'].shift(1)) & (df['close'].shift(1) < df['close'].shift(2))).astype(int)
+        df['threeDownDays'] = ((df['close'] < df['close'].shift(1)) & (df['close'].shift(1) < df['close'].shift(2)) & (df['close'].shift(2) < df['close'].shift(3))).astype(int)
 
         for col in cols:
             df[col] = df[col].rolling(window=50).apply(max_min_normalize)

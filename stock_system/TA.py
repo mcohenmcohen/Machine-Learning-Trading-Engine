@@ -66,11 +66,11 @@ def rate_of_change(arr, period=1):
     '''
     Calcuate the rate of change from n periods ago.  Seems Talib ROC is buggy.  TODO.
     '''
-    prevPrice = np.roll(arr, period)
+    prevPrice = arr.shift(period)
     today = arr
 
     #return (price-prevPrice)/prevPrice
-    return (today-prevPrice)/prevPrice
+    return (today - prevPrice)/prevPrice
 
 
 def discrete_series_compare(series_a, series_b):

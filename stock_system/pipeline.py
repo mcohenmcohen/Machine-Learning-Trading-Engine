@@ -9,7 +9,7 @@ from stock_system import TradingSystem_Comp, TradingSystem_Khaidem
 
 
 # Fit, train, and predit the model
-def run_once(X_train, X_test, y_train, y_test, features, thresh):
+def run_once(X_train, X_test, y_train, y_test, features, thresh=.5):
     all_scores = m.predict_tscv(model, X_train, y_train, print_on=True)
     print '====== Cross Val Mean Scores ======'
     for key in all_scores[0].keys():
@@ -23,9 +23,9 @@ def run_once(X_train, X_test, y_train, y_test, features, thresh):
     m.print_feature_importance(model, df[features])
 
     print '====== Predict Scores ======'
-    #y_pred = model.predict(X_test)
-    y_pred = model.predict_proba(X_test)
-    y_pred = (y_pred[:,1] > thresh).astype(int)
+    y_pred = model.predict(X_test)
+    # y_pred = model.predict_proba(X_test)
+    # y_pred = (y_pred[:,1] > thresh).astype(int)
 
     # model.score(yhat, y_test)
 
@@ -82,8 +82,8 @@ df_orig = ts.generate_target()  # generate the y label column
 
 # Get the featuers for the trading system
 #features = ts.get_features()
-#model_names = m.model_list
-model_names = ['rfc']
+model_names = m.model_list
+#model_names = ['rfc']
 model_results = []
 for model_name in model_names:
     print '================================'
@@ -92,7 +92,7 @@ for model_name in model_names:
     df = df_orig.copy()
     model = m.get_model(model_name)
     df_model_features = pd.read_csv('/Users/mcohen/Dev/Trading/trading_ml/_FeatureEngineering.csv',index_col=0)
-    num_features_to_use = 7
+    num_features_to_use = 4
     try:
         features = df_model_features[model_name][0:num_features_to_use].tolist()
     except:

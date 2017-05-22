@@ -13,8 +13,8 @@ from StringIO import StringIO  # For python 2.  For python 3 import from io
 if __name__ == "__main__":
 
     #symbols = ['GDX']
-    symbols = sys.argv[1:]
-    #print 'Argument List:', syms
+    symbols = sys.argv[1:][0].split(',')
+    print 'Symbols to process: ', symbols
 
     feed = IQFeed.DataFeed()
     db = DataUtils.DataUtils()
