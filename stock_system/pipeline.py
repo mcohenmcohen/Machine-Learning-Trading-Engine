@@ -9,7 +9,7 @@ from stock_system import TradingSystem_Comp, TradingSystem_Khaidem
 
 
 # Fit, train, and predit the model
-def run_once():
+def run_once(X_train, X_test, y_train, y_test, features, thresh):
     all_scores = m.predict_tscv(model, X_train, y_train, print_on=True)
     print '====== Cross Val Mean Scores ======'
     for key in all_scores[0].keys():
@@ -20,10 +20,13 @@ def run_once():
             pass
 
     print '====== Top feature imporance ======'
-    m.print_feature_importance(model, df[ts.get_features()])
+    m.print_feature_importance(model, df[features])
 
     print '====== Predict Scores ======'
-    y_pred = model.predict(X_test)
+    #y_pred = model.predict(X_test)
+    y_pred = model.predict_proba(X_test)
+    y_pred = (y_pred[:,1] > thresh).astype(int)
+
     # model.score(yhat, y_test)
 
     # Scores and confusion matrix
@@ -62,19 +65,13 @@ ts = TradingSystem_Comp.TradingSystem_Comp()
 # ts = TradingSystem_Khaidem.TradingSystem_Khaidem()
 
 symbol = sys.argv[1:][0] if len(sys.argv[1:]) > 0 else 'SPY'
-print 'Fitting for symbol: ', symbol
+print 'Retrieving symbold data for: ', symbol
 
-# get stock data from db as dataframe
-df_orig = db.read_symbol_data(symbol, 'd')
-
-# Using the tradng system, preprocess the data for it
-df_orig = ts.preprocess_data(df_orig)
-# Using the tradng system, generate the y column
+df_orig = db.read_symbol_data(symbol, 'd')  # get stock data from db as dataframe
+#df.set_index('date', inplace=True)
+df_orig = ts.preprocess_data(df_orig)  # Using the tradng system, preprocess the data for it
+df_orig = ts.generate_target()  # generate the y label column
 # df = pd.read_csv('/Users/mcohen/Dev/Trading/Robot Wealth/ML_Scripts_and_Data/eu_daily_midnight.csv')
-df_orig = ts.generate_target()
-
-# Instantiate model(s)
-model_name = 'rfc'
 
 # Run feature engineering/forensics.
 # ts.feature_forensics(model)
@@ -83,11 +80,15 @@ model_name = 'rfc'
 # ts.check_rfe(model)
 # FF = FeatureForensics.run_rfe(5, ts)
 
-# Do feature estimation
 # Get the featuers for the trading system
 #features = ts.get_features()
+#model_names = m.model_list
+model_names = ['rfc']
 model_results = []
-for model_name in m.model_list:
+for model_name in model_names:
+    print '================================'
+    print '====== Fit, predict: %s =======' % model_name
+    print '================================'
     df = df_orig.copy()
     model = m.get_model(model_name)
     df_model_features = pd.read_csv('/Users/mcohen/Dev/Trading/trading_ml/_FeatureEngineering.csv',index_col=0)
@@ -97,26 +98,6 @@ for model_name in m.model_list:
     except:
         print '- - - model %s does not use feautres. - - -' % model_name
 
-    # features = []
-    # if model_name == 'rfc':
-    #     features = 'volume,ATRrat1020,stod,bWidth3,bWidth20,ATRrat3,deltabWidth310'.split(',')  # rfc
-    # elif model_name == 'rfr':
-    #     features = 'volume,ATRrat1020,stod,deltaPVR5,deltabWidth310,deltaATRrat33,bWidth20'.split(',')  # rfr
-    # if model_name == 'abr':
-    #     features = 'volume,log_daily_return,ATRrat1020,willr,price_var_ratio,bWidth3,apc5'.split(',')  # abr
-    # if model_name == 'gbr':
-    #     features = 'volume,stod,deltaATRrat310,deltaPVR5,deltabWidth310,ATRrat10100,ATRrat1020'.split(',')  # gbr
-    # if model_name == 'linr':
-    #     features = 'relCanSize,open_interest,atr7,log_daily_return,ATRrat3,deltaATRrat33,bWidth20'.split(',')  # linr
-    # if model_name == 'logr':
-    #     features = 'volume,deltabWidth310,deltaATRrat33,relCanSize,open_interest,log_daily_return,deltaPVR5'.split(',')  # logr
-    # if model_name == 'lasso':
-    #     features = 'relCanSize,ATRrat1020,atr7,stod,obv,ATRrat10100,willr'.split(',')  # lasso
-    # if model_name == 'ridge':
-    #     features = 'volume,deltabWidth310,deltaATRrat33,relCanSize,open_interest,log_daily_return,atr7'.split(',')  # ridge
-    # else:
-    #     features = ts.get_features()
-    ##############
     # Use only relevant columns for the model in X
     y = df.pop('y_true').values
     X = df.values  # All columns of the original dataframe
@@ -127,7 +108,7 @@ for model_name in m.model_list:
                                                            test_set_size=int(df.shape[0]*.2))
 
     # Predict
-    y_pred = run_once()
+    y_pred = run_once(X_train, X_test, y_train, y_test, features, .7)
 
     results_dict = m.get_scores(y_test, y_pred)
     try:
@@ -164,18 +145,8 @@ df_test = df_test[cols_acc]
 acct = Accounting.get_abs_return(df_test)
 print acct
 
-#
-# # Do the accounting
-# # Compute the gain and loss of each tp, fp, tn, fn
 # profit_curve_main('data/churn.csv', cost_benefit_matrix)
-#
 #
 # # Run grid search for hyper parameters?
 # gs = GridUtils.GridSearcher()
 # gs.grid_search_reporter(X_train, y_train)
-# # Feature importances
-# model.feature_importances_
-#
-#
-# def get_positives_data(X, y):
-#     return X[y == 1], y[y == 1]

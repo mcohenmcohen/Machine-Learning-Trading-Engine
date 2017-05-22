@@ -80,7 +80,7 @@ class ModelUtils(object):
             model = Ridge()
 
         else:
-            err = 'Invalid model specified.  Must be one of: %s' % self.model_list
+            err = 'Invalid model specified: "%s".  Must be one of: %s' % (model_name,self.model_list)
             raise ValueError(err)
 
         return model

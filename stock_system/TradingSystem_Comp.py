@@ -3,8 +3,7 @@
 #
 ###################################################################################################
 import numpy as np
-from minepy import MINE
-from sklearn.feature_selection import RFE
+from sklearn.preprocessing import Imputer
 import inspect
 import talib
 from stock_system.TradingSystem import TradingSystem
@@ -28,31 +27,33 @@ class TradingSystem_Comp(TradingSystem):
         '''
         df = data.copy()
 
-
         #df = TA.run_techicals(df)
 
         # normal and smoothed Price series
-        opn = df['open']
-        high = df['high']
-        low = df['low']
-        close = df['close']
+        # opn = df['open']
+        # high = df['high']
+        # low = df['low']
+        # close = df['close']
+        opn = df['open'].ewm(com=.8).mean()
+        high = df['high'].ewm(com=.8).mean()
+        low = df['low'].ewm(com=.8).mean()
+        close = df['close'].ewm(com=.8).mean()
         volume = df['volume'].astype(float)
         # df['log_close'] = np.log(close)
-        mean_log_close_5 = np.log(close.shift(1)).rolling(window=5).mean()
-        df['apc5'] = mean_log_close_5 / talib.ATR(high.values, low.values, np.log(close).values, timeperiod=100)
-
         # df = TA.run_exp_smooth(df, alpha=.5)
         # opn_sm = df['exp_smooth_open']
         # high_sm = df['exp_smooth_high']
         # low_sm = df['exp_smooth_low']
         # close_sm = df['exp_smooth_close']
         # volume_sm = df['exp_smooth_volume']
+        mean_log_close_5 = np.log(close.rolling(window=5).mean())
+        df['apc5'] = mean_log_close_5 / talib.ATR(high.values, low.values, np.log(close).values, timeperiod=100)
 
         # Can play with short and long time preiods...
-        r5 = df.close.shift(1).rolling(window=5)
-        r10 = df.close.shift(1).rolling(window=10)
-        r20 = df.close.shift(1).rolling(window=20)
-        r30 = df.close.shift(1).rolling(window=30)
+        r5 = df.close.rolling(window=5)
+        r10 = df.close.rolling(window=10)
+        r20 = df.close.rolling(window=20)
+        r30 = df.close.rolling(window=30)
 
         # from article post
         #import pdb; pdb.set_trace()
@@ -69,7 +70,7 @@ class TradingSystem_Comp(TradingSystem):
         df['ATRrat3'] = talib.ATR(high.values, low.values, close.values, timeperiod=3) / talib.ATR(high.values, low.values, close.values, timeperiod=21)
         # df['ATRrat1050'] = talib.ATR(high.values, low.values, close.values, timeperiod=10) / talib.ATR(high.values, low.values, close.values, timeperiod=50)
         df['deltaATRrat33'] = df['ATRrat3'] - np.roll(df['ATRrat3'], 3)
-        df['deltaATRrat310'] = df['ATRrat3'] - np.roll(df['ATRrat3'], 10)
+        #df['deltaATRrat310'] = df['ATRrat3'] - np.roll(df['ATRrat3'], 10)
         df['mom10'] = talib.MOM(close.values, timeperiod=10)
         df['mom3'] = talib.MOM(close.values, timeperiod=3)
 
@@ -79,38 +80,33 @@ class TradingSystem_Comp(TradingSystem):
         df['bWidth20'] = upperband - lowerband
         df['deltabWidth33'] = df['bWidth3'] - np.roll(df['bWidth3'], 3)
         df['deltabWidth310'] = df['bWidth3'] - np.roll(df['bWidth3'], 10)
-        # df['stdClose20'] = r20.std()
-        linreg_preiod = 20
-        # df['linreg'] = talib.LINEARREG(close.values, timeperiod=linreg_preiod)
-        # #df['linreg'] = pd.stats.ols.MovingOLS(y=close, x=pd.Series(range(len(df.index))), window_type='rolling', window=100, intercept=True)
-        # slope = talib.LINEARREG_SLOPE(close.values, timeperiod=linreg_preiod)
-        # intercept = talib.LINEARREG_INTERCEPT(close.values, timeperiod=linreg_preiod)
-        # #df['linreg_cast'] = intercept + close * slope  # This is incorrect
-        # df['linreg_cast'] = df['linreg'] + (df['linreg'] - np.roll(df['linreg'], 1))
-
 
         df['price_var_ratio'] = r10.var() / r30.var()
         df['deltaPVR5'] = df['price_var_ratio'] - np.roll(df['price_var_ratio'], 5)
-
         #df['hurst'] = TA.hurst(close)
-
-        # df['roc'] = TA.rate_of_change(close, 1)  # highly correlated with daily returns
-        # df['roc_d'] = TA.discrete_series_pos_neg(df['roc'])
-        # df['rsi'] = talib.RSI(close.values, timeperiod=14)
-        #df['rsi_d'] = TA.continuous_to_discrete_w_bounds(df['rsi'], 30,70)
         df['willr'] = talib.WILLR(high.values, low.values, close.values, timeperiod=14)
         df['obv'] = talib.OBV(close.values, volume.values)
         stok, df['stod'] = talib.STOCH(high.values, low.values, close.values, fastk_period=5, slowk_period=3,
                                              slowk_matype=0, slowd_period=3, slowd_matype=0)
-
-        # Part 2
         df['mom3'] = talib.MOM(close.values, timeperiod=3)
         df['deltabWidth310'] = df['bWidth3'] - np.roll(df['bWidth3'], 10)
         df['atr7'] = talib.ATR(high.values, low.values, close.values, timeperiod=7)
         df['ATRrat1020'] = talib.ATR(high.values, low.values, close.values, timeperiod=10) / talib.ATR(high.values, low.values, close.values, timeperiod=20)
         df['ATRrat10100'] = talib.ATR(high.values, low.values, close.values, timeperiod=10) / talib.ATR(high.values, low.values, close.values, timeperiod=100)
 
-        # Price and volume
+        # Normalize all columns above but these defaulta:
+        cols = [col for col in df.columns if col not in self.excluded_features]
+        def max_min_normalize(ndarr):
+            x = (ndarr - ndarr.min())/( ndarr.max()-ndarr.min())
+            return x[-1]
+
+        # Non-normalized columns
+        df['roc'] = TA.rate_of_change(close, 1)  # highly correlated with daily returns
+        df['slope20'] = df['close'].rolling(window=20).apply(TA.slope_calc)
+        df['velocity'] = df['close'] + (df['slope20'] * df['close']) / 20
+        df['stdClose20'] = df['close'].shift(1).rolling(window=20).std()
+        df['zscore'] = (df['close'] - df['close'].shift(1).rolling(window=20).mean()) / df['stdClose20']
+        # Candle Size
         vol30 = df['volume'].rolling(window=30).mean()
         cSize = (df['close'] - df['open']).abs()
         cSize30 = cSize.shift(1).rolling(window=30).mean()
@@ -118,18 +114,15 @@ class TradingSystem_Comp(TradingSystem):
         relCanSize[np.isinf(relCanSize)] = 0  # impute inf to 0
         df['relCanSize'] = relCanSize
 
+
+        for col in cols:
+            df[col] = df[col].rolling(window=50).apply(max_min_normalize)
+
         # Impute - delete rows with Nan and null.  Will be the first several rows
+        imp = Imputer(missing_values='NaN', strategy='mean', axis=0)
+        #imp = imp.fit(X_train)
         for name in df.columns:
             df = df[df[name].notnull()]
-
-        # df.pop('date')
-        # df.pop('symbol')
-        df2 = df.ix[:,6:]
-        # # Normalize everything
-        # df2 = (df - df.mean())/df.std()  # Z-score
-        # or to max-min
-        df.ix[:,6:] = (df2-df2.min())/(df2.max()-df2.min())
-        # - TODO a rolling 50 period window of normalizing, rather than the whole df.  rolling.apply
 
 
         self.df = df
@@ -138,22 +131,7 @@ class TradingSystem_Comp(TradingSystem):
 
 
     def get_features(self):
-        # self.features = ['apc5', 'ATRrat3', 'deltaATRrat33', 'mom10', 'bWidth3', 'deltabWidth33',
-        #                  'linreg_cast', 'price_var_ratio', 'deltaPVR5', 'hurst']
-        #self.features = ['roc', 'stok', 'rsi', 'obv', 'willr']
-        #self.features = ['price_var_ratio', 'deltaPVR5', 'mom3', 'ATRrat3']
-        self.features = ['deltabWidth310', 'atr7', 'ATRrat1020', 'mom3', 'ATRrat10100']
-
         ### For SPY ###
-        self.features = 'volume,ATRrat1020,stod,bWidth3,bWidth20,ATRrat3,deltabWidth310'.split(',')  # rfc
-        # self.features = 'volume,ATRrat1020,stod,deltaPVR5,deltabWidth310,deltaATRrat33,bWidth20'.split(',')  # rfr
-        # self.features = 'volume,log_daily_return,ATRrat1020,willr,price_var_ratio,bWidth3,apc5'.split(',')  # abr
-        # self.features = 'volume,stod,deltaATRrat310,deltaPVR5,deltabWidth310,ATRrat10100,ATRrat1020'.split(',')  # gbr
-        # self.features = 'relCanSize,open_interest,atr7,log_daily_return,ATRrat3,deltaATRrat33,bWidth20'.split(',')  # linr
-        # self.features = 'volume,deltabWidth310,deltaATRrat33,relCanSize,open_interest,log_daily_return,deltaPVR5'.split(',')  # logr
-        # self.features = 'relCanSize,ATRrat1020,atr7,stod,obv,ATRrat10100,willr'.split(',')  # lasso
-        # self.features = 'volume,deltabWidth310,deltaATRrat33,relCanSize,open_interest,log_daily_return,atr7'.split(',')  # ridge
-
         # Oscilators
         # x_osc = ['rsi', 'cci', 'stod', 'stok', 'willr']
         # x_oscd_cols = ['rsi_d', 'cci_d', 'stod_d', 'stok_d', 'willr_d']

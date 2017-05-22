@@ -40,7 +40,7 @@ def get_abs_return(df):
     df['tn'] = ((df['y_true'] == 0) & (df['y_pred'] == 0)).astype(int)
     df['fn'] = ((df['y_true'] == 1) & (df['y_pred'] == 0)).astype(int)
 
-    confusion_matrix = df[['tp','fp','tn','fn']].sum()
+    confusion_matrix = df[['tp', 'fp', 'tn', 'fn']].sum()
 
     tp_total = df.groupby('tp').gain_loss.sum()[1]
     fp_total = df.groupby('fp').gain_loss.sum()[1]
@@ -48,7 +48,7 @@ def get_abs_return(df):
     fn_total = df.groupby('fn').gain_loss.sum()[1]
 
     acct_mat = confusion_matrix.to_frame('Count')
-    acct_mat['Amount'] = np.array([tp_total,tn_total,fp_total,fn_total])
+    acct_mat['Amount'] = np.array([tp_total, fp_total, tn_total, fn_total])
 
     return acct_mat
 

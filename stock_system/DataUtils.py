@@ -66,7 +66,9 @@ class DataUtils(object):
         #     where = where
 
         query = prefix + where + ' order by date'
-        return pd.read_sql(query, self.engine)
+        df = pd.read_sql(query, self.engine)
+        df.set_index('date', inplace=True)  # Set date as the index
+        return df
 
     ##################################
     # get data from Quandl
@@ -80,3 +82,13 @@ class DataUtils(object):
         '''
         sym = 'WIKI/%s', symbol
         return quandl.get(sym)
+
+
+    ##################################
+    # get data from the web via data reader
+    ##################################
+    def get_symbols_dr():
+        '''
+        http://stackoverflow.com/questions/22991567/pandas-yahoo-finance-datareader
+        '''
+        #TODO Experiment with this source and api

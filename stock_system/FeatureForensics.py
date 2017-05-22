@@ -11,13 +11,16 @@ def run_rfe(num_top_features, ts):
     m = ModelUtils.ModelUtils()
     model_names = m.get_model_list()
     series_list = []
-    # model_names = 'linr,logr,lasso,ridge'.split(',')
+    #model_names = 'abr,linr,logr,lasso,ridge'.split(',')
     for model_name in model_names:
-        if model_name == 'knn':  # knn has no coef_ or feature_importance_ param
+        # no coef_ or feature_importance_ not supported for the estimators:
+        if model_name == 'knn':
             continue
         if model_name == 'svc':  # svc has no coef_ or feature_importance_ param
             continue
         if model_name == 'svr':  # svr has no coef_ or feature_importance_ param
+            continue
+        if model_name == 'abr':
             continue
         model = m.get_model(model_name)
         # ts.check_corr()

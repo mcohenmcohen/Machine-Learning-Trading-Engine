@@ -6,6 +6,7 @@
 
 import pandas as pd
 import numpy as np
+import statsmodels.api as sm
 import talib
 # https://github.com/mrjbq7/ta-lib
 # index - https://github.com/mrjbq7/ta-lib/blob/master/docs/index.md
@@ -171,8 +172,34 @@ def run_holt_winters_second_order_ewma(series, period, beta):
 
     return s
 
-from numpy import cumsum, log, polyfit, sqrt, std, subtract
-from numpy.random import randn
+
+# def get_lin_reg_slope(df, period):
+#     import statsmodels.api as sm
+#
+#     Y = df[-period:].close.values
+#     X = range(1, period+1)
+#     # dates = df.index.to_julian_date().values[-period:, None]
+#     # X = np.concatenate([np.ones_like(dates), dates], axis=1)
+#     X = sm.add_constant(X)
+#     model = sm.OLS(Y, X)
+#     results = model.fit()
+#     intercept = results.params[0]
+#     slope = results.params[1]
+#
+#     return (intercept, slope)
+def slope_calc(in_list):
+    cnstnt = sm.add_constant(range(-len(in_list) + 1, 1))
+    return sm.OLS(in_list, cnstnt).fit().params[-1]  # slope
+
+def velocity(in_list, period=20):
+    '''
+    Forecast the next day's movement as a function of slope divided by slope period
+
+    input:  A list of slopes calculated over given period
+    eg: close + (df['slope20'] * close) / 20
+    '''
+    series = close + (in_list * close) / period
+    return series[-1]
 
 def hurst(ts):
     '''
@@ -183,6 +210,9 @@ def hurst(ts):
 
     https://www.quantstart.com/articles/Basics-of-Statistical-Mean-Reversion-Testing
     '''
+    from numpy import cumsum, log, polyfit, sqrt, std, subtract
+    from numpy.random import randn
+
     # Create the range of lag values
     lags = range(2, 100)
 

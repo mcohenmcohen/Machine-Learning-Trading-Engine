@@ -15,7 +15,8 @@ class TradingSystem(object):
     '''
     def __init__(self):
         self.name = ''  # An optional name
-        self.features = []
+        self.excluded_features = ['symbol', 'open', 'high', 'low', 'close']
+
 
     def preprocess_data(self):
         '''
@@ -132,7 +133,8 @@ class TradingSystem(object):
         print '- model: ', model.__class__
         df = self.df.copy()
         #import pdb; pdb.set_trace()
-        X = df.ix[:,6:].copy()
+        cols = [col for col in df.columns if col not in self.excluded_features]
+        X = df[cols].copy()
         y = X.pop('y_true')
 
         estimator = model
