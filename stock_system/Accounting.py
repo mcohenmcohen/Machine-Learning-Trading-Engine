@@ -72,18 +72,22 @@ def plot_equity_curve_compare(in_df):
     df = in_df.copy()
     fig = plt.figure(figsize=(20,10))
     fig.patch.set_facecolor('white')     # Set the outer colour to white
-    ax1_ylabel_text = '%s Price in $' % df['symbol'][0]
+    symbol = df['symbol'][0]
+    ax1_ylabel_text = '%s Price in $' % symbol
     ax1 = fig.add_subplot(211,  ylabel=ax1_ylabel_text)
 
     # Plot the base ticker closing price overlaid with the moving averages
-    df['close'].plot(ax=ax1, color='r', lw=2.)
+    df['close'].plot(ax=ax1, color='r', lw=2., label=symbol)
     # df[['sma5', 'sma20']].plot(ax=ax1, lw=2.)
 
     # Plot the "buy" trades against AAPL
     # ax1.plot(df[df['y_pred'] == 1.0])
     ax1.plot(df[df['y_pred'] == 1.0].index,
              df['sma5'][df['y_pred'] == 1.0],
-             '^', markersize=7, color='m')
+             '^', markersize=7, color='m', label='Buy signals')
+    lines, labels = ax1.get_legend_handles_labels()
+    ax1.legend(lines[:2], labels[:2], loc='best', fontsize=14)  # legend for first two lines only
+
 
     # # Plot the "sell" trades against AAPL
     # ax1.plot(signals.ix[signals.positions == -1.0].index,
@@ -92,8 +96,11 @@ def plot_equity_curve_compare(in_df):
 
     # Plot the equity curve in dollars
     ax2 = fig.add_subplot(212, ylabel='Predict vs True portfolio value in $')
-    df['running_ret_true'].plot(ax=ax2, color='r', lw=2.)
-    df['running_ret_pred'].plot(ax=ax2, lw=2.)
+    #df[['running_ret_true','running_ret_pred']].plot(ax=ax2, color='r', lw=2.)
+    df['running_ret_true'].plot(ax=ax2, color='r', lw=2., label='True')
+    df['running_ret_pred'].plot(ax=ax2, lw=2., label='Predicted')
+    lines, labels = ax2.get_legend_handles_labels()
+    ax2.legend(lines[:2], labels[:2], loc='best', fontsize=14)  # legend for first two lines only
 
     # Plot the "buy" and "sell" trades against the equity curve
     # ax2.plot(df[df['y_pred'] == 1.0])  # , '^', markersize=10, color='m'
