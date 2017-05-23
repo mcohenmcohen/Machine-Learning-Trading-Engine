@@ -204,7 +204,7 @@ class ModelUtils(object):
         '''
     	return np.sqrt(np.mean((y - y_pred) ** 2))
 
-    def predict_tscv(self, model, X_train, y_train, num_folds=5, print_on=False):
+    def fit_predict_score_tscv(self, model, X_train, y_train, num_folds=5, print_on=False):
         '''
         Run a time series cross validation on the model prediction
         '''
@@ -240,6 +240,23 @@ class ModelUtils(object):
 
         # return np.mean(error)
         return all_scores
+
+    def fit_predict_score(self, model, X_train, y_train, X_test, y_test, print_on=False):
+        '''
+        fit the model and return scores
+        '''
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        error = self.rmse(y_test, y_pred)
+        if print_on:
+            print 'train, test size: ', str(X_train.shape[0]) + ',', str(X_test.shape[0])
+            print '- rmse: ', error
+        score = self.get_scores(y_test, y_pred, print_on)
+
+        if print_on:
+            self.print_standard_confusion_matrix(y_test, y_pred)
+
+        return score
 
     def walk_forward_train(self, model, X, y, start_index=100, window_range=100):
         '''

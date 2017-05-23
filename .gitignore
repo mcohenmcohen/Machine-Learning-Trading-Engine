@@ -8,3 +8,7 @@
 **/*.bak.py
 *.png
 **/*.png
+*.ppt
+**/*.ppt
+*.pdf
+**/*.pdf

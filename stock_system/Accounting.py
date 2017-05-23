@@ -20,7 +20,7 @@ import pandas as pd
 import warnings
 
 
-def get_abs_return(df):
+def get_profit_confusion_matrix_df(df):
     '''
     Calculations using close price:
         For a dialy return, the prediction operates on the data available that day, and
@@ -33,8 +33,12 @@ def get_abs_return(df):
     Output:
         dataframe of gain and loss for each of tp, tn, fp, fn
     '''
-    # Add a column for the daily price change for convenience
-    df['gain_loss'] = np.roll(df['close'], -1) - df['close']  # -1 for one day ahead
+    # True daily return: Today close - yesterday close
+    df['daily_ret'] = df['close'] - df['close'].shift(1)
+    # Predicted daily return: tomorrow close - today close
+    df['daily_ret_pred'] = df['close'].shift(-1) - df['close']
+    # df['daily_ret_pred'] = np.roll(df['close'], -1) - df['close']
+
     df['tp'] = ((df['y_true'] == 1) & (df['y_pred'] == 1)).astype(int)
     df['fp'] = ((df['y_true'] == 0) & (df['y_pred'] == 1)).astype(int)
     df['tn'] = ((df['y_true'] == 0) & (df['y_pred'] == 0)).astype(int)
@@ -42,15 +46,95 @@ def get_abs_return(df):
 
     confusion_matrix = df[['tp', 'fp', 'tn', 'fn']].sum()
 
-    tp_total = df.groupby('tp').gain_loss.sum()[1]
-    fp_total = df.groupby('fp').gain_loss.sum()[1]
-    tn_total = df.groupby('tn').gain_loss.sum()[1]
-    fn_total = df.groupby('fn').gain_loss.sum()[1]
+    tp_total = df.groupby('tp').daily_ret_pred.sum()[1]
+    fp_total = df.groupby('fp').daily_ret_pred.sum()[1]
+    tn_total = df.groupby('tn').daily_ret_pred.sum()[1]
+    fn_total = df.groupby('fn').daily_ret_pred.sum()[1]
 
     acct_mat = confusion_matrix.to_frame('Count')
     acct_mat['Amount'] = np.array([tp_total, fp_total, tn_total, fn_total])
 
     return acct_mat
+
+
+def cacl_running_returns(df):
+    '''
+    Calculate a cumulative sum of returns for each buy signal
+
+    This formula is valid for categorical y labels of 1 and 0
+    '''
+    df['running_ret_pred'] = np.cumsum(df['y_pred'] * df['daily_ret_pred'])
+    df['running_ret_true'] = np.cumsum(df['daily_ret'])
+
+def plot_equity_curve_compare(in_df):
+    # Plot two charts to assess trades and equity curve
+    # https://www.quantstart.com/articles/Backtesting-a-Moving-Average-Crossover-in-Python-with-pandas
+    df = in_df.copy()
+    fig = plt.figure(figsize=(20,10))
+    fig.patch.set_facecolor('white')     # Set the outer colour to white
+    ax1_ylabel_text = '%s Price in $' % df['symbol'][0]
+    ax1 = fig.add_subplot(211,  ylabel=ax1_ylabel_text)
+
+    # Plot the base ticker closing price overlaid with the moving averages
+    df['close'].plot(ax=ax1, color='r', lw=2.)
+    # df[['sma5', 'sma20']].plot(ax=ax1, lw=2.)
+
+    # Plot the "buy" trades against AAPL
+    # ax1.plot(df[df['y_pred'] == 1.0])
+    ax1.plot(df[df['y_pred'] == 1.0].index,
+             df['sma5'][df['y_pred'] == 1.0],
+             '^', markersize=7, color='m')
+
+    # # Plot the "sell" trades against AAPL
+    # ax1.plot(signals.ix[signals.positions == -1.0].index,
+    #          signals.short_mavg[signals.positions == -1.0],
+    #          'v', markersize=10, color='k')
+
+    # Plot the equity curve in dollars
+    ax2 = fig.add_subplot(212, ylabel='Predict vs True portfolio value in $')
+    df['running_ret_true'].plot(ax=ax2, color='r', lw=2.)
+    df['running_ret_pred'].plot(ax=ax2, lw=2.)
+
+    # Plot the "buy" and "sell" trades against the equity curve
+    # ax2.plot(df[df['y_pred'] == 1.0])  # , '^', markersize=10, color='m'
+    # ax2.plot(df[df['y_pred'] == -1.0].index,
+    #          df[df['y_pred'] == -1.0],
+    #          'v', markersize=10, color='k')
+
+    # Might need to put this bit in the python notebook
+    import matplotlib
+    font = {'family' : 'normal',
+            'weight' : 'bold',
+            'size'   : 18}
+    matplotlib.rc('xtick', labelsize=10)
+    matplotlib.rc('ytick', labelsize=10)
+    matplotlib.rc('font', **font)
+
+    # Plot the figure
+    fig.show()
+
+
+def annualised_sharpe(returns, N=252):
+    '''
+    Calculate the annualised Sharpe ratio of a returns stream
+    based on a number of trading periods, N. N defaults to 252,
+    which then assumes a stream of daily returns.
+
+    The function assumes that the returns are the excess of
+    those compared to a benchmark.
+
+    Eg,
+        # Use the percentage change method to easily calculate daily returns
+        df['daily_ret'] = df['adj_close'].pct_change()
+
+        # Assume an average annual risk-free rate over the period of 5%
+        df['excess_daily_ret'] = df['daily_ret'] - 0.05/252
+
+        # Return the annualised Sharpe ratio based on the excess daily returns
+        return annualised_sharpe(df['excess_daily_ret'])
+    '''
+    return np.sqrt(N) * returns.mean() / returns.std()
+
 
 def get_cost_benefit_matrix(self, y_true, y_pred, gain_loss):
     '''

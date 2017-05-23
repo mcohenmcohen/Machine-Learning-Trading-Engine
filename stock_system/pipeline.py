@@ -10,7 +10,8 @@ from stock_system import TradingSystem_Comp, TradingSystem_Khaidem
 
 # Fit, train, and predit the model
 def run_once(X_train, X_test, y_train, y_test, features, thresh=.5):
-    all_scores = m.predict_tscv(model, X_train, y_train, print_on=True)
+    #all_scores = m.fit_predict_score_tscv(model, X_train, y_train, num_folds=10, print_on=True)
+    all_scores = [m.fit_predict_score(model, X_train, y_train, X_test, y_test, print_on=True)]
     print '====== Cross Val Mean Scores ======'
     for key in all_scores[0].keys():
         try:
@@ -83,7 +84,7 @@ df_orig = ts.generate_target()  # generate the y label column
 # Get the featuers for the trading system
 #features = ts.get_features()
 model_names = m.model_list
-#model_names = ['rfc']
+model_names = ['rfc']
 model_results = []
 for model_name in model_names:
     print '================================'
@@ -92,7 +93,7 @@ for model_name in model_names:
     df = df_orig.copy()
     model = m.get_model(model_name)
     df_model_features = pd.read_csv('/Users/mcohen/Dev/Trading/trading_ml/_FeatureEngineering.csv',index_col=0)
-    num_features_to_use = 4
+    num_features_to_use = 10
     try:
         features = df_model_features[model_name][0:num_features_to_use].tolist()
     except:
@@ -130,20 +131,20 @@ df_all_model_results.to_csv('_ModelOutput.csv')
 # ##### For Accounting ######
 # # Recreate the original dataframe of test data including the predicted and true y labels
 # df_train = df[0:X_train.shape[0]].copy()
-df_test = df[X_train.shape[0]:].copy()
+df = df[X_train.shape[0]:].copy()
 # Add back in the y_true and y_pred label columns
-df_test['y_true'] = y_test
-df_test['y_pred'] = y_pred
-df_test['gain_loss'] = np.roll(df_test['close'], -1) - df_test['close']
+df['y_true'] = y_test
+df['y_pred'] = y_pred
+#df_test['daily_ret'] = np.roll(df_test['close'], -1) - df_test['close']
 
 # Convenient subset of accounting
-df['gain_loss'] = np.roll(df_test['close'], 1) - df_test['close']
-# cols_acc = ['date', 'close', 'gain_loss', 'y_true', 'y_pred']
-cols_acc = ['close', 'gain_loss', 'y_true', 'y_pred']
-df_test = df_test[cols_acc]
+#df['daily_ret'] = np.roll(df_test['close'], 1) - df_test['close']
+# cols_acc = ['date', 'close', 'daily_ret', 'y_true', 'y_pred']
+cols_acc = ['close', 'y_true', 'y_pred', 'daily_ret', 'daily_ret_pred', 'running_ret_pred']
+#df_test = df_test[cols_acc]
 
-acct = Accounting.get_abs_return(df_test)
-print acct
+profit_cm = Accounting.get_profit_confusion_matrix_df(df)
+print profit_cm
 
 # profit_curve_main('data/churn.csv', cost_benefit_matrix)
 #

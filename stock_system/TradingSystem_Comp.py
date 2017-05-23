@@ -65,9 +65,6 @@ class TradingSystem_Comp(TradingSystem):
         # df['ATRrat1050'] = talib.ATR(high.values, low.values, close.values, timeperiod=10) / talib.ATR(high.values, low.values, close.values, timeperiod=50)
         df['deltaATRrat33'] = df['ATRrat3'] - np.roll(df['ATRrat3'], 3)
         #df['deltaATRrat310'] = df['ATRrat3'] - np.roll(df['ATRrat3'], 10)
-        df['mom10'] = talib.MOM(close.values, timeperiod=10)
-        df['mom3'] = talib.MOM(close.values, timeperiod=3)
-
         upperband, middleband, lowerband = talib.BBANDS(close.values, timeperiod=3, nbdevup=2, nbdevdn=2, matype=0)
         df['bWidth3'] = upperband - lowerband
         upperband, middleband, lowerband = talib.BBANDS(close.values, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
@@ -82,7 +79,6 @@ class TradingSystem_Comp(TradingSystem):
         df['obv'] = talib.OBV(close.values, volume.values)
         stok, df['stod'] = talib.STOCH(high.values, low.values, close.values, fastk_period=5, slowk_period=3,
                                              slowk_matype=0, slowd_period=3, slowd_matype=0)
-        df['mom3'] = talib.MOM(close.values, timeperiod=3)
         df['deltabWidth310'] = df['bWidth3'] - np.roll(df['bWidth3'], 10)
         df['atr7'] = talib.ATR(high.values, low.values, close.values, timeperiod=7)
         df['ATRrat1020'] = talib.ATR(high.values, low.values, close.values, timeperiod=10) / talib.ATR(high.values, low.values, close.values, timeperiod=20)
@@ -93,14 +89,29 @@ class TradingSystem_Comp(TradingSystem):
         def max_min_normalize(ndarr):
             x = (ndarr - ndarr.min())/( ndarr.max()-ndarr.min())
             return x[-1]
+        for col in cols:
+            df[col] = df[col].rolling(window=50).apply(max_min_normalize)
 
         # Non-normalized columns
         # stats
-        df['roc'] = TA.rate_of_change(close, 1)  # highly correlated with daily returns
+        df['roc1'] = TA.rate_of_change(close, 1)  # highly correlated with daily returns
+        df['roc2'] = TA.rate_of_change(close, 2)
+        df['roc5'] = TA.rate_of_change(close, 5)
         df['slope20'] = df['close'].rolling(window=20).apply(TA.slope_calc)
         df['velocity'] = df['close'] + (df['slope20'] * df['close']) / 20
         df['stdClose20'] = df['close'].shift(1).rolling(window=20).std()
         df['zscore'] = (df['close'] - df['close'].shift(1).rolling(window=20).mean()) / df['stdClose20']
+        # Oscilattors are by design already normalized
+        df['mom3'] = talib.MOM(close.values, timeperiod=3)
+        df['mom10'] = talib.MOM(close.values, timeperiod=10)  # 2 week momentum
+        df['mom20'] = talib.MOM(close.values, timeperiod=20)  # 4 week momentum
+        df['mom10accel'] = df['mom10'] - df['mom10'].shift(4)  # 4 days diff
+        df['mom20accel'] = df['mom20'] - df['mom20'].shift(4)  # 4 days diff
+        # Price extremes
+        df['HH20'] = (df['high'] > df['high'].shift(1).rolling(window=20).max()).astype(int)  # highest high in 4 weeks
+        df['HH5'] = (df['high'] > df['high'].shift(1).rolling(window=5).max()).astype(int)  # highest high in 1 week
+        df['LL20'] = (df['low'] < df['low'].shift(1).rolling(window=20).min()).astype(int)  # highest high in 4 weeks
+        df['LL5'] = (df['low'] < df['low'].shift(1).rolling(window=5).min()).astype(int)  # highest high in 1 week
         # Candle and volume Size
         vol30 = df['volume'].shift(1).rolling(window=30).mean()
         relVolSize = df['volume'] / vol30
@@ -111,6 +122,10 @@ class TradingSystem_Comp(TradingSystem):
         relCanSize = cSize / cSize30
         relCanSize[np.isnan(relCanSize)] = 0  # impute inf to 0
         df['relCanSize'] = relCanSize
+        # MAs
+        df['sma5'] = talib.SMA(df['close'].values, 5)
+        df['sma20'] = talib.SMA(df['close'].values, 20)
+        df['sma50'] = talib.SMA(df['close'].values, 50)
         # MA discrete series
         # df['MACurOver3'] = (df['close'] > df['close'].shift(1).rolling(window=3).mean()).astype(int)
         # df['MA3Over5'] = (df['close'].rolling(window=3).mean() > df['close'].shift(1).rolling(window=5).mean()).astype(int)
@@ -119,9 +134,6 @@ class TradingSystem_Comp(TradingSystem):
         # Last n days
         df['twoDownDays'] = ((df['close'] < df['close'].shift(1)) & (df['close'].shift(1) < df['close'].shift(2))).astype(int)
         df['threeDownDays'] = ((df['close'] < df['close'].shift(1)) & (df['close'].shift(1) < df['close'].shift(2)) & (df['close'].shift(2) < df['close'].shift(3))).astype(int)
-
-        for col in cols:
-            df[col] = df[col].rolling(window=50).apply(max_min_normalize)
 
         # Impute - delete rows with Nan and null.  Will be the first several rows
         imp = Imputer(missing_values='NaN', strategy='mean', axis=0)
