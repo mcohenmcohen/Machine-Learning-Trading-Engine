@@ -120,8 +120,9 @@ class ModelUtils(object):
                 and return a dict of the scores: key = metric name, value = score
 
         '''
-        relevant_metrics = [precision_score, recall_score, accuracy_score, roc_auc_score,
-                            mean_squared_error, r2_score, f1_score]
+        # relevant_metrics = [precision_score, recall_score, accuracy_score, roc_auc_score,
+        #                     mean_squared_error, r2_score, f1_score]
+        relevant_metrics = [precision_score, recall_score, accuracy_score, roc_auc_score, f1_score]
         # met = []
         met = {}
         for metric in relevant_metrics:
@@ -181,15 +182,15 @@ class ModelUtils(object):
             print "Can't print confusion matrix for regressor"
 
 
-    def print_feature_importance(self, model, df, n=10):
+    def print_feature_importance(self, model, df, num_feat=10):
         '''
         Print the top n features
 
         Input:  the (random foreset) model, dataframe of test data and columns, num features
         '''
         try:
-            importances = model.feature_importances_[:n]
-            features = list(df.columns[np.argsort(model.feature_importances_[:n])])
+            importances = model.feature_importances_[:num_feat]
+            features = list(df.columns[np.argsort(model.feature_importances_[:num_feat])])
             print features
             print np.sort(model.feature_importances_)[::-1]
         except:
@@ -241,12 +242,19 @@ class ModelUtils(object):
         # return np.mean(error)
         return all_scores
 
-    def fit_predict_score(self, model, X_train, y_train, X_test, y_test, print_on=False):
+    def fit(self):
+        self.model.fit(self.X_train, self.y_train)
+
+    def fit_predict_score(self, print_on=False):
         '''
         fit the model and return scores
         '''
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+        X_train = self.X_train
+        y_train = self.y_train
+        X_test = self.X_test
+        y_test = self.y_test
+        self.model.fit(X_train, y_train)
+        y_pred = self.model.predict(X_test)
         error = self.rmse(y_test, y_pred)
         if print_on:
             print 'train, test size: ', str(X_train.shape[0]) + ',', str(X_test.shape[0])

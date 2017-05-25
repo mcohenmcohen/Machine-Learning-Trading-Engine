@@ -17,7 +17,6 @@ class TradingSystem(object):
         self.name = ''  # An optional name
         self.excluded_features = ['symbol', 'open', 'high', 'low', 'close']
 
-
     def preprocess_data(self):
         '''
         Perform any data preprocessing steps such as normalizing, smoothing,
@@ -30,6 +29,24 @@ class TradingSystem(object):
         Return the features used by the trading system and implementing model.
         '''
         pass
+
+    def set_features(features):
+        '''
+        Set the features for the tradng system to be used by the model
+
+        input:  list of features, column names
+        '''
+        self.features = features
+
+    def set_features_from_file(self, model_name, num_features_to_use=10):
+        '''
+        Set the features to be used by the tradng system, pulled from a file that
+        stores an ordered list of features, which was generated previously by a
+        feature engineering function
+        '''
+        features_df = pd.read_csv('/Users/mcohen/Dev/Trading/trading_ml/_FeatureEngineering.csv',index_col=0)
+        self.features = features_df[model_name][0:num_features_to_use].tolist()
+
 
     def generate_target(self):
         '''

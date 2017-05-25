@@ -20,7 +20,7 @@ import pandas as pd
 import warnings
 
 
-def get_profit_confusion_matrix_df(df):
+def get_profit_confusion_matrix_df(in_df):
     '''
     Calculations using close price:
         For a dialy return, the prediction operates on the data available that day, and
@@ -33,6 +33,7 @@ def get_profit_confusion_matrix_df(df):
     Output:
         dataframe of gain and loss for each of tp, tn, fp, fn
     '''
+    df = in_df.copy()
     # True daily return: Today close - yesterday close
     df['daily_ret'] = df['close'] - df['close'].shift(1)
     # Predicted daily return: tomorrow close - today close
@@ -54,72 +55,20 @@ def get_profit_confusion_matrix_df(df):
     acct_mat = confusion_matrix.to_frame('Count')
     acct_mat['Amount'] = np.array([tp_total, fp_total, tn_total, fn_total])
 
-    return acct_mat
+    return df, acct_mat
 
 
-def cacl_running_returns(df):
+def cacl_running_returns(in_df):
     '''
     Calculate a cumulative sum of returns for each buy signal
 
     This formula is valid for categorical y labels of 1 and 0
     '''
+    df = in_df.copy()
     df['running_ret_pred'] = np.cumsum(df['y_pred'] * df['daily_ret_pred'])
     df['running_ret_true'] = np.cumsum(df['daily_ret'])
 
-def plot_equity_curve_compare(in_df):
-    # Plot two charts to assess trades and equity curve
-    # https://www.quantstart.com/articles/Backtesting-a-Moving-Average-Crossover-in-Python-with-pandas
-    df = in_df.copy()
-    fig = plt.figure(figsize=(20,10))
-    fig.patch.set_facecolor('white')     # Set the outer colour to white
-    symbol = df['symbol'][0]
-    ax1_ylabel_text = '%s Price in $' % symbol
-    ax1 = fig.add_subplot(211,  ylabel=ax1_ylabel_text)
-
-    # Plot the base ticker closing price overlaid with the moving averages
-    df['close'].plot(ax=ax1, color='r', lw=2., label=symbol)
-    # df[['sma5', 'sma20']].plot(ax=ax1, lw=2.)
-
-    # Plot the "buy" trades against AAPL
-    # ax1.plot(df[df['y_pred'] == 1.0])
-    ax1.plot(df[df['y_pred'] == 1.0].index,
-             df['sma5'][df['y_pred'] == 1.0],
-             '^', markersize=7, color='m', label='Buy signals')
-    lines, labels = ax1.get_legend_handles_labels()
-    ax1.legend(lines[:2], labels[:2], loc='best', fontsize=14)  # legend for first two lines only
-
-
-    # # Plot the "sell" trades against AAPL
-    # ax1.plot(signals.ix[signals.positions == -1.0].index,
-    #          signals.short_mavg[signals.positions == -1.0],
-    #          'v', markersize=10, color='k')
-
-    # Plot the equity curve in dollars
-    ax2 = fig.add_subplot(212, ylabel='Predict vs True portfolio value in $')
-    #df[['running_ret_true','running_ret_pred']].plot(ax=ax2, color='r', lw=2.)
-    df['running_ret_true'].plot(ax=ax2, color='r', lw=2., label='True')
-    df['running_ret_pred'].plot(ax=ax2, lw=2., label='Predicted')
-    lines, labels = ax2.get_legend_handles_labels()
-    ax2.legend(lines[:2], labels[:2], loc='best', fontsize=14)  # legend for first two lines only
-
-    # Plot the "buy" and "sell" trades against the equity curve
-    # ax2.plot(df[df['y_pred'] == 1.0])  # , '^', markersize=10, color='m'
-    # ax2.plot(df[df['y_pred'] == -1.0].index,
-    #          df[df['y_pred'] == -1.0],
-    #          'v', markersize=10, color='k')
-
-    # Might need to put this bit in the python notebook
-    import matplotlib
-    font = {'family' : 'normal',
-            'weight' : 'bold',
-            'size'   : 18}
-    matplotlib.rc('xtick', labelsize=10)
-    matplotlib.rc('ytick', labelsize=10)
-    matplotlib.rc('font', **font)
-
-    # Plot the figure
-    fig.show()
-
+    return df
 
 def annualised_sharpe(returns, N=252):
     '''

@@ -160,6 +160,14 @@ class TradingSystem_Comp(TradingSystem):
         # x_cols = x_all_dscrete_cols + x_ma_cols
         return self.features
 
+    def set_features(self, features):
+        '''
+        Set the features for the tradng system to be used by the model
+
+        input:  list of features, column names
+        '''
+        self.features = features
+
     def feature_forensics(self, model):
         return TradingSystem.feature_forensics(self, model)
 

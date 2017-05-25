@@ -3,22 +3,27 @@
 ###################################################################################################
 
 import numpy as np
+import matplotlib
+import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
-from sklearn.linear_model import Ridge, Lasso, LinearRegression, LogisticRegression
+from scipy import stats
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.metrics import mean_squared_error as mse
-from sklearn.metrics import (brier_score_loss, precision_score, recall_score,
-                             f1_score)
+from sklearn.metrics import brier_score_loss, precision_score, recall_score, f1_score
 from collections import OrderedDict
 
 
-def plot_ts_chart(price, date):
+def plot_ts_chart(in_df, price_series='close'):
     '''
     A Simple stock chart plot_ts_chart
     '''
+    df = in_df.copy()
     plt.figure(figsize=(12,6))
-    plt.scatter(date, price)
+    plt.title(df['symbol'][0])
+    plt.scatter(df.index, df[price_series])
+    plt.show()
 
 # TODO
 # ROC curve
@@ -208,7 +213,7 @@ def plot_roc_curve(probabilities, y_test):
     plt.show()
 
 
-def plot_meteric_scores(all_scores):
+def plot_metric_scores(all_scores):
     '''
     Plot metric scores derived from model predictions.
     X Axis is the number of days the y target is from the current price
@@ -221,7 +226,7 @@ def plot_meteric_scores(all_scores):
     for score_name in names:
         scores = [d[score_name] for d in all_scores]
         axs[i].plot(scores, label=score_name)
-        axs[i].legend()
+        axs[i].legend(loc='best', fontsize=10)
         i += 1
     #plt.title(symbol)
     plt.xlabel('Num Days Ahead For Prediction')
@@ -307,4 +312,94 @@ def plot_calibration_curve(est, name, fig_index, X_train, X_test, y_train, y_tes
 
     plt.tight_layout()
 
+    plt.show()
+
+
+def plot_equity_curve_compare(in_df):
+    df = in_df.copy()
+    # Plot two charts to assess trades and equity curve
+    # https://www.quantstart.com/articles/Backtesting-a-Moving-Average-Crossover-in-Python-with-pandas
+    font = {'family': 'normal', 'weight': 'bold', 'size': 18}
+    matplotlib.rc('xtick', labelsize=10)
+    matplotlib.rc('ytick', labelsize=10)
+    matplotlib.rc('font', **font)
+    plt.rc('axes', grid=True)
+    plt.rc('grid', color='0.75', linestyle='-', linewidth=0.5)
+
+    fig = plt.figure(figsize=(20,10))
+    fig.patch.set_facecolor('white')     # Set the outer colour to white
+    symbol = df['symbol'][0]
+    ax1_ylabel_text = '%s Price in $' % symbol
+    ax1 = fig.add_subplot(211,  ylabel=ax1_ylabel_text)
+
+    # Plot the base ticker closing price overlaid with the moving averages
+    label = '%s price' % symbol
+    df['close'].plot(ax=ax1, color='r', lw=2., label=label)
+
+    # Plot the "buy" trades against AAPL
+    ax1.plot(df[df['y_pred'] == 1.0].index,
+             df['sma5'][df['y_pred'] == 1.0],
+             '^', markersize=7, color='m', label='Buy signals')
+    lines, labels = ax1.get_legend_handles_labels()
+    ax1.legend(lines[:2], labels[:2], loc='best', fontsize=14)  # legend for first two lines only
+
+    # # Plot the "sell" trades against symbol
+    # ax1.plot(signals.ix[signals.positions == -1.0].index,
+    #          signals.short_mavg[signals.positions == -1.0],
+    #          'v', markersize=10, color='k')
+
+    # Plot the equity curve vs symbol
+    ax2 = fig.add_subplot(212, ylabel='Predict vs True portfolio value in $')
+    df['running_ret_true'].plot(ax=ax2, color='r', lw=2., label=label)
+    df['running_ret_pred'].plot(ax=ax2, lw=2., label='Predicted results')
+    lines, labels = ax2.get_legend_handles_labels()
+    ax2.legend(lines[:2], labels[:2], loc='best', fontsize=14)  # legend for first two lines only
+    ax2.set_xlabel('')
+
+    # Plot the "buy" and "sell" trades against the equity curve
+    # ax2.plot(df[df['y_pred'] == 1.0])  # , '^', markersize=10, color='m'
+    # ax2.plot(df[df['y_pred'] == -1.0].index,
+    #          df[df['y_pred'] == -1.0],
+    #          'v', markersize=10, color='k')
+
+    # Might need to put this bit in the python notebook
+    font = {'family' : 'normal',
+            'weight' : 'bold',
+            'size'   : 18}
+    matplotlib.rc('xtick', labelsize=10)
+    matplotlib.rc('ytick', labelsize=10)
+    matplotlib.rc('font', **font)
+
+    # Plot the figure
+    fig.show()
+
+
+def plot_returns_hist(returns, symbol=''):
+    '''
+    Print the raw returns as a histogram overlaid with a norma distribution
+
+    input:  pd.Series or np.array
+    '''
+    #plt.rc('axes', grid=False)
+    #plt.plot(density())
+
+    # N = 100
+    mn = returns.min()
+    mx = returns.max()
+    # x = np.random.randint(mn, mx, N)
+    # bins = np.arange(10)
+
+    mean = np.mean(returns.tolist())
+    variance = np.var(returns.tolist())
+    sigma = np.sqrt(variance)
+    x = np.linspace(mn, mx,100)
+    plt.plot(x,mlab.normpdf(x,mean,sigma), label='Norm', linewidth=2, color='r')
+    label = 'Daily price change for %s' % symbol
+    plt.hist(returns, bins=100, normed=True, label=label)
+
+    # kde = stats.gaussian_kde(x)
+    # xx = np.linspace(mn,mx,1000)
+    # plt.plot(xx,kde(xx))
+    plt.title('Predicted Return Values')
+    plt.legend(loc='best', fontsize=8)
     plt.show()
