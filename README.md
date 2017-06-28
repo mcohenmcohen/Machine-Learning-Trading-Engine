@@ -1,5 +1,5 @@
 # Machine Learning Trading Engine
-This appliation provides a framework to execute trading systems built as machine learning models.
+This appliation provides a framework to execute trading systems built using machine learning models.
 
 The code base has 3 core components:
 - A set of data access tools to retrieve stocks data
