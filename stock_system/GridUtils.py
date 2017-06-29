@@ -64,6 +64,12 @@ class GridSearcher(object):
             'gamma': [.02, .08, 1.5, 5]
         }
 
+        lin_reg = {
+            'fit_intercept':[True,False],
+            'normalize':[True,False],
+            'copy_X':[True, False]
+        }
+
         self.models = [
             (GradientBoostingClassifier(), gd_boost),
             (AdaBoostClassifier(DecisionTreeClassifier()), ada_boost),
