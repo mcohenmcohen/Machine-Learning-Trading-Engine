@@ -12,3 +12,4 @@
 **/*.ppt
 *.pdf
 **/*.pdf
+_tests/*
