@@ -1,9 +1,9 @@
-###################################################################################################
-# Accounting
-#
-# Utilities for calculating the gain or loss from making or missing tades
-# based on model signal outputs
-###################################################################################################
+'''
+Utilities for calculating accounting, eg gain or loss, from making or
+missing tades, based on model signal outputs.
+'''
+# Author:  Matt Cohen
+# Python Version 2.7
 
 from itertools import izip
 from sklearn.ensemble import GradientBoostingClassifier as GBC

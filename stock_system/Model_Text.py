@@ -1,9 +1,13 @@
-# TF-IDF
+'''
+** Placehoder for TF-IDF model implementation
+'''
+# Author:  Matt Cohen
+# Python Version 2.7
+
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
-
 
 
 v = TfidfVectorizer(stop_words='english',max_features=300)

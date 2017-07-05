@@ -1,8 +1,9 @@
-###################################################################################################
-# Technical Analysis
-#
-# Utilities to calculate technical analysis indicators and related data manipulation
-###################################################################################################
+'''
+Technical analysis utilities to calculate technical analysis indicators
+and related data manipulation
+'''
+# Author:  Matt Cohen
+# Python Version 2.7
 
 import pandas as pd
 import numpy as np
@@ -13,9 +14,6 @@ import talib
 # documentation: https://github.com/mrjbq7/ta-lib/blob/master/docs/func.md
 
 
-################################
-# Technical Analysis functions
-################################
 def run_techicals(df):
     '''
     Preform technical anlysis calcuaitons and add to a dataframe.

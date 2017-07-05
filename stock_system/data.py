@@ -1,6 +1,10 @@
-###################################################################################################
-# Class for accessing data from a database or other datasource, and other processing of data
-###################################################################################################
+'''
+DataUtils class
+- Provides database access, alternatively another datasource
+- shell functions for data from Quandl and elsewhere on the web
+'''
+# Author:  Matt Cohen
+# Python Version 2.7
 
 import numpy as np
 import pandas as pd
@@ -8,7 +12,6 @@ import psycopg2 as pg2
 from sqlalchemy import create_engine
 import quandl
 
-# select * from symbols where date > timestamp '2017-05-01 00:00:00' and EXTRACT(HOUR FROM date) = 16 and EXTRACT(MINUTE FROM date) = 0;
 
 class DataUtils(object):
     '''
@@ -46,6 +49,9 @@ class DataUtils(object):
         '''
         period = str(period).upper()
 
+        # Query format:
+        # select * from symbols where date > timestamp '2017-05-01 00:00:00' and \
+        #   EXTRACT(HOUR FROM date) = 16 and EXTRACT(MINUTE FROM date) = 0;
         prefix = "select * from symbols where symbol = '%s'" % symbol
         # No where clause for minutes.  Default is minutes
         where = ''
@@ -61,9 +67,6 @@ class DataUtils(object):
         if period == 'W':
             where = " and EXTRACT(HOUR FROM date) = 16 and EXTRACT(MINUTE FROM date) = 0 \
                      and EXTRACT(DOW FROM date) = 5"
-
-        # if where not '':
-        #     where = where
 
         query = prefix + where + ' order by date'
         df = pd.read_sql(query, self.engine)
@@ -83,7 +86,6 @@ class DataUtils(object):
         sym = 'WIKI/%s', symbol
         return quandl.get(sym)
 
-
     ##################################
     # get data from the web via data reader
     ##################################
@@ -91,4 +93,4 @@ class DataUtils(object):
         '''
         http://stackoverflow.com/questions/22991567/pandas-yahoo-finance-datareader
         '''
-        #TODO Experiment with this source and api
+        # TODO Experiment with this source and api

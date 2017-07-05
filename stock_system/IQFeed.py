@@ -1,7 +1,9 @@
-###################################################################################################
-# Class DataFeed handles access to IQFeed
-# Refer to https://www.quantstart.com/articles/Downloading-Historical-Intraday-US-Equities-From-DTN-IQFeed-with-Python
-###################################################################################################
+'''
+Class DataFeed handles access to IQFeed
+Refer to https://www.quantstart.com/articles/Downloading-Historical-Intraday-US-Equities-From-DTN-IQFeed-with-Python
+'''
+# Author:  Matt Cohen
+# Python Version 2.7
 
 import sys
 import socket

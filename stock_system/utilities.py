@@ -1,6 +1,8 @@
-###################################################################################################
-# Utilities to assist in data plotting
-###################################################################################################
+'''
+Utilities to assist in data plotting
+'''
+# Author:  Matt Cohen
+# Python Version 2.7
 
 import numpy as np
 import matplotlib
@@ -9,10 +11,20 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_val_score, ShuffleSplit
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from sklearn.metrics import mean_squared_error as mse
-from sklearn.metrics import brier_score_loss, precision_score, recall_score, f1_score
+from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import brier_score_loss
 from collections import OrderedDict
+
+
+# TODO:
+# ROC curve
+# Profit curve? - sure, if I put the $ amount of the next day trade
+# Calibration plot - http://scikit-learn.org/stable/modules/calibration.html
+# - http://scikit-learn.org/stable/auto_examples/calibration/plot_calibration_curve.html
+# Lambda curve - for regularization
 
 
 def plot_ts_chart(in_df, price_series='close'):
@@ -20,17 +32,11 @@ def plot_ts_chart(in_df, price_series='close'):
     A Simple stock chart plot_ts_chart
     '''
     df = in_df.copy()
-    plt.figure(figsize=(12,6))
+    plt.figure(figsize=(12, 6))
     plt.title(df['symbol'][0])
     plt.scatter(df.index, df[price_series])
     plt.show()
 
-# TODO
-# ROC curve
-# Profit curve? - sure, if I put the $ amount of the next day trade
-# Calibration plot - http://scikit-learn.org/stable/modules/calibration.html
-# - http://scikit-learn.org/stable/auto_examples/calibration/plot_calibration_curve.html
-# Lambda curve - for regularization
 
 def plot_learning_curve(estimator, X, y, label=None):
     '''
@@ -41,15 +47,16 @@ def plot_learning_curve(estimator, X, y, label=None):
     * 3/3/indiv
     '''
     scores = list()
-    train_sizes = np.linspace(10,100,10).astype(int)
+    train_sizes = np.linspace(10, 100, 10).astype(int)
     for train_size in train_sizes:
-        cv_shuffle = cross_validation.ShuffleSplit(train_size=train_size,
-                                                   test_size=200, n=len(y), random_state=0)
-        test_error = cross_validation.cross_val_score(estimator, X, y, cv=cv_shuffle)
+        cv_shuffle = ShuffleSplit(train_size=train_size,
+                                  test_size=200, n=len(y), random_state=0)
+        test_error = cross_val_score(estimator, X, y, cv=cv_shuffle)
         scores.append(test_error)
 
-    plt.plot(train_sizes, np.mean(scores, axis=1), label=label or estimator.__class__.__name__)
-    plt.ylim(0,1)
+    plt.plot(train_sizes, np.mean(scores, axis=1),
+             label=label or estimator.__class__.__name__)
+    plt.ylim(0, 1)
     plt.title('Learning Curve')
     plt.ylabel('Explained variance on test set (R^2)')
     plt.xlabel('Training test size')
@@ -88,10 +95,13 @@ def plot_errors(X, y, X_train, y_train, X_test, y_test):
 
 def plot_alpha_rmse(model, X_train, y_train):
     '''
-    Plot alphas/rmse to find the optimal alpha for regularization, either Ridge or Lasso
+    Plot alphas/rmse to find the optimal alpha for regularization,
+    either Ridge or Lasso
 
-    We are looking to find the error between our fit model and the data both training and test.
-    We will run a different RMSE calculation for each alpha, also for  both training and test.
+    We are looking to find the error between our fit model and the
+    data both training and test.
+    We will run a different RMSE calculation for each alpha, also
+    for  both training and test.
 
     *3/3/pair
     '''
@@ -104,16 +114,20 @@ def plot_alpha_rmse(model, X_train, y_train):
         test_prediction = m.predict(X_test)
         rmse_train.append(np.sqrt(mse(train_prediction, y_train)))
         rmse_test.append(np.sqrt(mse(test_prediction, y_test)))
-    plt.plot(alphas, rmse_train, marker='.', linestyle='None', color='g', label='Train')
-    plt.plot(alphas, rmse_test, marker='.', linestyle='None', color='r', label='Test')
+    plt.plot(alphas, rmse_train, marker='.',
+             linestyle='None', color='g', label='Train')
+    plt.plot(alphas, rmse_test, marker='.',
+             linestyle='None', color='r', label='Test')
     plt.legend()
     plt.xscale('log')
     plt.show()
 
-    plt.plot(alphas, rmse_train, marker='.', linestyle='None', color='g', label='Train')
-    plt.plot(alphas, rmse_test, marker='.', linestyle='None', color='r', label='Test')
+    plt.plot(alphas, rmse_train, marker='.',
+             linestyle='None', color='g', label='Train')
+    plt.plot(alphas, rmse_test, marker='.',
+             linestyle='None', color='r', label='Test')
     plt.legend()
-    plt.xlim(0,1)
+    plt.xlim(0, 1)
     plt.show()
 
 
@@ -167,10 +181,13 @@ def plot_oob_error(X, y, min_estimators=15, max_estimators=100):
 
 def roc_curve(probabilities, labels):
     '''
-    Input:  Take a numpy array of the predicted probabilities and a numpy array of the
-    true labels.
-    Output: Return the True Positive Rates, False Positive Rates and Thresholds for the
-    ROC curve.
+    Input:
+        probabilies : array
+            Take a numpy array of the predicted probabilities and a
+            numpy array of the true labels.
+    Output:
+        Return the True Positive Rates, False Positive Rates and Thresholds
+        for the ROC curve.
     '''
 
     thresholds = np.sort(probabilities)
@@ -228,23 +245,24 @@ def plot_metric_scores(all_scores):
         axs[i].plot(scores, label=score_name)
         axs[i].legend(loc='best', fontsize=10)
         i += 1
-    #plt.title(symbol)
+    # plt.title(symbol)
     plt.xlabel('Num Days Ahead For Prediction')
 
     plt.show()
 
 
-def plot_calibration_curve(est, name, fig_index, X_train, X_test, y_train, y_test, cv='prefit'):
+def plot_calibration_curve(est, name, fig_index,
+                           X_train, X_test, y_train, y_test, cv='prefit'):
     '''
     Plot calibration curve for est w/o and with calibration.
 
     Inputs:
-    - est - the model
-    - name - the model name
-    - fig_index - which figure to plot it in
-    - cv - the cross-validation strategy
-           The stock models will be fitted already and are applicable to 'prefit'
-           Integer values are the number of folds
+        est : the model
+        name : the model name
+        fig_index : which figure to plot it in
+        cv : the cross-validation strategy
+             Stock models will be fitted already and are applicable to 'prefit'
+             Integer values are the number of folds
 
     e.g.,
         # Plot calibration curve for Gaussian Naive Bayes
@@ -263,7 +281,7 @@ def plot_calibration_curve(est, name, fig_index, X_train, X_test, y_train, y_tes
     # Logistic regression with no calibration as baseline
     lr = LogisticRegression(C=1., solver='lbfgs')
 
-    fig = plt.figure(fig_index, figsize=(10, 10))
+    # fig = plt.figure(fig_index, figsize=(10, 10))
     ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
     ax2 = plt.subplot2grid((3, 1), (2, 0))
 
@@ -276,7 +294,7 @@ def plot_calibration_curve(est, name, fig_index, X_train, X_test, y_train, y_tes
         #     clf.fit(X_train, y_train)
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
-        #import pdb; pdb.set_trace()
+
         if hasattr(clf, "predict_proba"):
             prob_pos = clf.predict_proba(X_test)[:, 1]
         else:  # use decision function
@@ -285,7 +303,7 @@ def plot_calibration_curve(est, name, fig_index, X_train, X_test, y_train, y_tes
                 (prob_pos - prob_pos.min()) / (prob_pos.max() - prob_pos.min())
 
         clf_score = brier_score_loss(y_test, prob_pos, pos_label=1)
-        #clf_score = brier_score_loss(y_test, prob_pos)
+        # clf_score = brier_score_loss(y_test, prob_pos)
         print("%s:" % name)
         print("\tBrier: %1.3f" % (clf_score))
         print("\tPrecision: %1.3f" % precision_score(y_test, y_pred))
@@ -326,7 +344,7 @@ def plot_equity_curve_compare(in_df):
     plt.rc('axes', grid=True)
     plt.rc('grid', color='0.75', linestyle='-', linewidth=0.5)
 
-    fig = plt.figure(figsize=(20,10))
+    fig = plt.figure(figsize=(20, 10))
     fig.patch.set_facecolor('white')     # Set the outer colour to white
     symbol = df['symbol'][0]
     ax1_ylabel_text = '%s Price in $' % symbol
@@ -380,8 +398,8 @@ def plot_returns_hist(returns, symbol=''):
 
     input:  pd.Series or np.array
     '''
-    #plt.rc('axes', grid=False)
-    #plt.plot(density())
+    # plt.rc('axes', grid=False)
+    # plt.plot(density())
 
     # N = 100
     mn = returns.min()
@@ -392,8 +410,9 @@ def plot_returns_hist(returns, symbol=''):
     mean = np.mean(returns.tolist())
     variance = np.var(returns.tolist())
     sigma = np.sqrt(variance)
-    x = np.linspace(mn, mx,100)
-    plt.plot(x,mlab.normpdf(x,mean,sigma), label='Norm', linewidth=2, color='r')
+    x = np.linspace(mn, mx, 100)
+    plt.plot(x, mlab.normpdf(x, mean, sigma),
+             label='Norm', linewidth=2, color='r')
     label = 'Daily price change for %s' % symbol
     plt.hist(returns, bins=100, normed=True, label=label)
 

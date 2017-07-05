@@ -1,18 +1,26 @@
-###################################################################################################
-# Class provides functions to fit, cross validate, predict, score and print model stats
-###################################################################################################
+'''
+Class provides functions to fit, cross validate, predict, score and
+print model stats
+'''
+# Author:  Matt Cohen
+# Python Version 2.7
 
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC, SVR
-from sklearn.linear_model import Ridge, Lasso, LinearRegression, LogisticRegression
-from sklearn.metrics import precision_score, recall_score, accuracy_score, roc_auc_score
-from sklearn.metrics import mean_squared_error, r2_score, f1_score, confusion_matrix
+from sklearn.linear_model import Ridge, Lasso
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.metrics import precision_score, recall_score, accuracy_score
+from sklearn.metrics import roc_auc_score, confusion_matrix
+from sklearn.metrics import mean_squared_error, r2_score, f1_score
 from sklearn.metrics import classification_report
 from sklearn.model_selection import TimeSeriesSplit, cross_val_score, cross_val_predict
+from sklearn.model_selection import GridSearchCV
+import timeit
 
 
 class ModelUtils(object):
@@ -20,18 +28,28 @@ class ModelUtils(object):
     Class provides functions to fit, cross validate, predict, score and print model stats
     '''
     def __init__(self):
+        self.model = None
         self.model_list = 'rfc,rfr,abc,abr,gbc,gbr,knn,svc,svr,linr,logr,lasso,ridge'.split(',')
 
     def get_model_list(self):
+        '''
+        Return a list of the available model types to implement
+        '''
         return self.model_list
 
-    def get_model(self, model_name='rf'):
+    def set_model(self, model_name='rfc'):
         '''
-        Return a model of the given name.  Parameter values are preset.
+        Set the sklearn model.  Defaults to RandomForestClassifier
+
+        Input:
+            model_name - short hand refernce to an sklearn model.
+                Must be a valid element in model_list
+        Output:
+            sklearn model of the given name.  Parameter values are preset.
         TODO: configurable parameters
         '''
         model_name = model_name.lower()
-        if model_name == 'rfc' or model_name == 'rfc':
+        if model_name == 'rfc':
             model = RandomForestClassifier(
                n_estimators=500,
                max_depth=None,
@@ -83,27 +101,27 @@ class ModelUtils(object):
             err = 'Invalid model specified: "%s".  Must be one of: %s' % (model_name,self.model_list)
             raise ValueError(err)
 
-        return model
+        self.model = model
+
+    def get_model(self):
+        '''
+        Return this class' sklearn model
+        '''
+        return self.model
 
     def simple_data_split(self, X, y, test_set_size=100):
         '''
-        Simple train/test set split where the tail end of the total set becomes the test set.
+        Simple train/test set split where the tail end of the total set
+        becomes the test set.
 
-        Input:  test_set_size (representing the last n bars of (price) data)
-        Output: X_train, X_test, y_train, y_test
+        Input:
+            test_set_size (representing the last n bars of (price) data)
+        Output:
+            X_train, X_test, y_train, y_test
 
-        - TODO: Could perform a query to order by date to ensure the df/array is date ordered.
-                This is currently presumed.
+        - TODO: Could perform a query to order by date to ensure the df/array
+                is date ordered.  This is currently presumed.
         '''
-        # from sklearn.cross_validation import PredefinedSplit
-        #
-        # X = np.array([[1, 2], [3, 4], [5, 6], [7, 8]])
-        # y = np.array([0, 0, 1, 1])
-        # test_fold = [0, 0, 1]
-        # ps = PredefinedSplit(test_fold=test_fold, )
-        #
-        # for train_index, test_index in ps:
-        #     print("TRAIN:", train_index, "TEST:", test_index)
         X_train = X[0:-test_set_size]
         X_test = X[-test_set_size:]
         y_train = y[0:-test_set_size]
@@ -115,9 +133,11 @@ class ModelUtils(object):
         '''
         Print all score, including the sklearn classification report
 
-        Input:  y pred and true labels
-        Output: Print all score values
-                and return a dict of the scores: key = metric name, value = score
+        Input:
+            y pred and true labels
+        Output:
+            Print all score values, and
+            return a dict of the scores: key = metric name, value = score
 
         '''
         # relevant_metrics = [precision_score, recall_score, accuracy_score, roc_auc_score,
@@ -148,7 +168,8 @@ class ModelUtils(object):
 
     def standard_confusion_matrix(self, y_true, y_pred):
         '''
-        Convert confusion matrix to standard format format:
+        Convert confusion matrix to standard format format.
+
         Input:
             y_true : ndarray - 1D
             y_pred : ndarray - 1D
@@ -196,7 +217,6 @@ class ModelUtils(object):
         except:
             print 'Model %s has no feature importance data' % model.__class__
             features = []
-
 
 
     def rmse(self, y, y_pred):
@@ -292,3 +312,107 @@ class ModelUtils(object):
             # print('train=%d, test=%d' % (len(X_train), len(X_test)))
             #print 'Cnt, Pred, True, Accuracy, Total: %s' % (i)#, y_pred[:-2:-1], y_test[:-2:-1])#, score, y_pred_proba)
             print '- score: %s, prob: %s' % (score, y_pred_proba)
+
+
+###################################################################################################
+# Class to support grid searching
+###################################################################################################
+
+
+class GridSearcher(object):
+    '''
+    This class provides services to support grid search on classifier models
+
+    init configures the parameters for each model
+    grid_search_reporter output the results of each models search
+    grid_search runs the search for one model
+    '''
+    def __init__(self):
+        '''
+        Init with a list of (model, dict) tuples.
+        The dictionary for each model has parameters specific to that model.
+        '''
+        gd_boost = {
+            'learning_rate': [1, 0.05, 0.02, 0.01],
+            'max_depth': [2, 4, 6],
+            'max_features': ['sqrt', 'log2'],
+            'n_estimators': [50, 100, 1000]
+        }
+
+        ada_boost = {
+            'learning_rate': [1, 0.05, 0.02, 0.01],
+            'base_estimator__max_depth': [2, 4, 6],
+            'base_estimator__max_features': ['sqrt', 'log2'],
+            'n_estimators': [50, 100, 1000]
+        }
+
+        decision_tree = {
+            'max_depth': [2, 4, 6, 10],
+            'min_samples_split': [5, 10, 20],
+            'min_samples_leaf': [3, 5, 9, 17]
+        }
+
+        random_forest_grid = {
+            'n_estimators': [50, 100, 1000],
+            'max_features': ['sqrt', 'log2'],
+            'min_samples_leaf': [1, 2, 10, 50],
+        }
+
+        knn_grid = {
+            'n_neighbors': [5, 10, 15],
+            'weights': ['uniform', 'distance'],
+        }
+
+        svc_grid = {
+            'C': [0.1, 1.0, 5],
+            'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+            'degree': [2, 3],
+            'shrinking': [True, False],
+            'gamma': [.02, .08, 1.5, 5]
+        }
+
+        lin_reg = {
+            'fit_intercept':[True,False],
+            'normalize':[True,False],
+            'copy_X':[True, False]
+        }
+
+        self.models = [
+            (GradientBoostingClassifier(), gd_boost),
+            (AdaBoostClassifier(DecisionTreeClassifier()), ada_boost),
+            (DecisionTreeClassifier(), decision_tree),
+            (RandomForestClassifier(), random_forest_grid),
+            (KNeighborsClassifier(), knn_grid),
+            (SVC(), svc_grid)
+        ]
+
+    def grid_search_reporter(self, X_train, y_train):
+        searches = []
+
+        for model, feature_dict in self.models:
+            print "Running grid search for {}".format(model.__class__.__name__)
+            start_time = timeit.default_timer()
+            gs = self.grid_search(model, feature_dict, X_train, y_train)
+
+            print "====={}=====".format(gs.best_estimator_.__class__.__name__)
+            print "  processing time: {} ".format(timeit.default_timer() - start_time)
+            print "  f1 score: {}".format(gs.best_score_)
+            print "  best params: {}".format(gs.best_params_)
+
+            searches.append(gs)
+
+        return searches
+
+    def grid_search(self, model, feature_dict, X_train, y_train):
+        gscv = GridSearchCV(
+            model,
+            feature_dict,
+            n_jobs=-1,
+            verbose=True,
+            scoring='f1',
+            iid=False,
+            cv=TimeSeriesSplit(n_splits=5).split(X_train)
+        )
+
+        gscv.fit(X_train, y_train)
+        return gscv
