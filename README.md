@@ -14,4 +14,6 @@ The code base has these core components:
 * A number of plotting functions
 * An accounting module to calculate profit/loss scenarios (very thin right now)
 
-_**This is a work-in-progress and as such is prone to potential bugs and sometimes large changes to the architecture of the code base._
+_** PS: This is a work-in-progress and as such is prone to potential bugs and sometimes large changes to the architecture of the code base._
+
+_*** PPS: More content for this readme is coming, I promise.
