@@ -1,6 +1,8 @@
 '''
 ** Placeholder for a mean reverting trading systems
 '''
+# Author:  Matt Cohen
+# Python Version 2.7
 
 import numpy as np
 from minepy import MINE

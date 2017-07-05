@@ -34,20 +34,20 @@ def run_techicals(df):
     series = close
 
     # df['roc'] = talib.ROCP(series, timeperiod=1)
-    df['roc'] = rate_of_change(df['close'], 1)# > 0.04
-    df['roc_d'] = discrete_series_pos_neg(df['roc'])# > 80.638
-    df['rsi'] = talib.RSI(series, timeperiod=14)# > 80.638
-    df['rsi_d'] = continuous_to_discrete_w_bounds(df['rsi'], 30,70)# > 80.638
-    df['willr'] = talib.WILLR(high, low, series, timeperiod=14)# > -11
-    df['willr_d'] = discrete_trend(df['willr'])# > -11
-    df['cci'] = talib.CCI(high, low, series, timeperiod=14)# > -11
-    df['cci_d'] = continuous_to_discrete_w_bounds(df['cci'], -200, 200)# > -11
+    df['roc'] = rate_of_change(df['close'], 1)  # > 0.04
+    df['roc_d'] = discrete_series_pos_neg(df['roc'])  # > 80.638
+    df['rsi'] = talib.RSI(series, timeperiod=14)  # > 80.638
+    df['rsi_d'] = continuous_to_discrete_w_bounds(df['rsi'], 30, 70)  # > 80.638
+    df['willr'] = talib.WILLR(high, low, series, timeperiod=14)  # > -11
+    df['willr_d'] = discrete_trend(df['willr'])  # > -11
+    df['cci'] = talib.CCI(high, low, series, timeperiod=14)  # > -11
+    df['cci_d'] = continuous_to_discrete_w_bounds(df['cci'], -200, 200)  # > -11
     df['obv'] = talib.OBV(series, volume)
     df['mom'] = talib.MOM(series)
     df['mom_d'] = discrete_series_pos_neg(df['mom'])
-    df['sma20'] = discrete_series_compare(close, talib.SMA(series, 20)) #> talib.MA(series, 200)
-    df['sma50'] = discrete_series_compare(close, talib.SMA(series, 50)) #> talib.MA(series, 200)
-    df['sma200'] = discrete_series_compare(close, talib.SMA(series, 200)) #> talib.MA(series, 200)
+    df['sma20'] = discrete_series_compare(close, talib.SMA(series, 20))  # > talib.MA(series, 200)
+    df['sma50'] = discrete_series_compare(close, talib.SMA(series, 50))  # > talib.MA(series, 200)
+    df['sma200'] = discrete_series_compare(close, talib.SMA(series, 200))  # > talib.MA(series, 200)
     df['wma10'] = discrete_series_compare(close, talib.WMA(series, 10))
     df['macd'], df['macd_sig'], macdhist = talib.MACD(series, fastperiod=12, slowperiod=26, signalperiod=9)
     df['macd_d'] = discrete_trend(df['macd'])# > -11
