@@ -186,8 +186,27 @@ def run_holt_winters_second_order_ewma(series, period, beta):
 #
 #     return (intercept, slope)
 def slope_calc(in_list):
+    '''
+    http://www.statsmodels.org/dev/generated/statsmodels.regression.linear_model.OLS.html
+    '''
     cnstnt = sm.add_constant(range(-len(in_list) + 1, 1))
     return sm.OLS(in_list, cnstnt).fit().params[-1]  # slope
+
+
+def slope2(in_list, period):
+    '''
+    Calculcate the slope from OLS for the last n periods from current
+    '''
+    #Y = [1,3,4,5,2,3,4]
+    Y = in_list
+    #Y = Y[-4:]  # subset range of Y
+    Y = Y[-period:]  # subset range of Y
+    X = range(1,len(Y)+1)
+    X = sm.add_constant(X)
+    model = sm.OLS(Y,X)
+    results = model.fit()
+    results.params[-1]
+
 
 def velocity(in_list, period=20):
     '''
@@ -240,3 +259,88 @@ def hurst(ts):
     #
     # # Assuming you have run the above code to obtain 'goog'!
     # print "Hurst(GOOG):  %s" % hurst(goog['Adj Close'])
+
+
+def volatility(series, period):
+    '''
+    The moving historical standard deviation of the log returns—i.e. the moving
+    historical volatility—might be more of interest:
+        Also make use of pd.rolling_std(data, window=x) * math.sqrt(window) for
+        the moving historical standard deviation of the log returns (aka the
+        moving historical volatility).
+
+    Input:
+        series - pandas series
+        period - num for rolling window
+    '''
+    # Daily returns
+    series_roc = series.pct_change()
+
+    # Replace NA values with 0
+    #series_roc.fillna(0, inplace=True)
+
+    # Inspect daily returns
+    #print(series_roc)
+
+    # Daily log returns
+    series_log = np.log(series.pct_change()+1)
+
+    # Calculate the volatility
+    vol = series_log.rolling(period).std() * np.sqrt(period)
+
+    # Plot the volatility
+    vol.plot(figsize=(10, 8))
+
+
+def SCTR(series):
+    '''
+    stockcharts.com SCTR indicator
+    - http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:sctr
+
+    Input:
+        series - pandas Series.  Should be the close.
+
+    Calculation:
+
+        Long-Term Indicators (weighting)
+
+          * Percent above/below 200-day EMA (30%)
+          * 125-Day Rate-of-Change (30%)
+
+        Medium-Term Indicators (weighting)
+
+          * Percent above/below 50-day EMA (15%)
+          * 20-day Rate-of-Change (15%)
+
+        Short-Term Indicators (weighting)
+
+          * 3-day slope of PPO-Histogram (5%)
+          * 14-day RSI (5%)
+
+        http://www.stratasearch.com/forum/viewtopic.php?f=9&t=1198
+    '''
+    close = series
+    ema200 = talib.EMA(close.values, 200)
+    ema50 = talib.EMA(close.values, 50)
+    ema26 = talib.EMA(close.values, 26)
+    ema12 = talib.EMA(close.values, 12)
+    roc125 = (close - close.shift(125)) / (close.shift(125)*1.)
+    roc20 = (close - close.shift(20)) / (close.shift(20)*1.)
+    ppo = talib.PPO(dff.a.values, 12, 26)
+    rsi = talib.RSI(close, 14)
+
+    # Weights
+    LT_EMA = (close - ema200) / (ema200*1.) * 100 * 0.3
+    LT_ROC = roc125 * 100 * 0.3
+
+    MT_EMA = (close - ema50) / (ema50*1.) * 100 * 0.15
+    MT_ROC = roc20 * 100 * 0.15
+
+    PPO_HIST = ppo - talib.EMA(ppo, 9)
+    SLOPE = slope2(PPO_HIST, 3)
+    ST_PPO = (SLOPE >= 1) * 0.05 * 100   # Should be 5 points, not .05
+    ST_RSI = rsi * 0.05
+
+    SCTR = LT_EMA + LT_ROC + MT_EMA + MT_ROC + ST_PPO + ST_RSI;
+
+    return SCTR
