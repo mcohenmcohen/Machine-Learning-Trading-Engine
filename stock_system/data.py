@@ -11,6 +11,9 @@ import pandas as pd
 import psycopg2 as pg2
 from sqlalchemy import create_engine
 import quandl
+import datetime
+from pandas_datareader import data as pdr
+import fix_yahoo_finance
 
 
 class DataUtils(object):
@@ -74,6 +77,42 @@ class DataUtils(object):
         return df
 
     ##################################
+    # get data from pandas_datareader
+    ##################################
+    def get_data_pdr_yahoo(self, symbols, start_date, end_date=''):
+        '''
+        Get data via pandas_datareader
+
+        input:
+            symbol - string
+            start_date - datetime.datetime
+            end_date - datetime.datetime
+        output:
+            dataframe of daily data
+
+        eg,
+            import datetime
+            from pandas_datareader import data as pdr
+            import fix_yahoo_finance
+
+            aapl = pdr.get_data_yahoo('AAPL',
+                                      start=datetime.datetime(2006, 10, 1),
+                                      end=datetime.datetime(2012, 1, 1))
+            aapl = pdr.get_data_yahoo('AAPL',
+                                      start=datetime.datetime(2006, 10, 1))
+            aapl.tail()
+        '''
+        def data(symbol):
+            if end_date:
+                sym_df = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
+            else:
+                sym_df = pdr.get_data_yahoo(symbol, start=start_date)
+            return sym_df
+
+        datas = map (data, symbols)
+        return(pd.concat(datas, keys=symbols, names=['Symbol', 'Date']))
+
+    ##################################
     # get data from Quandl
     ##################################
     def get_data_quandl(self, symbol):
@@ -82,15 +121,11 @@ class DataUtils(object):
 
         input:  symbol
         output: dataframe of daily data
+
+        eg,
+            import quandl
+            aapl = quandl.get("WIKI/AAPL", start_date="2006-10-01", end_date="2012-01-01")
+            aapl.head()
         '''
         sym = 'WIKI/%s', symbol
         return quandl.get(sym)
-
-    ##################################
-    # get data from the web via data reader
-    ##################################
-    def get_symbols_dr():
-        '''
-        http://stackoverflow.com/questions/22991567/pandas-yahoo-finance-datareader
-        '''
-        # TODO Experiment with this source and api

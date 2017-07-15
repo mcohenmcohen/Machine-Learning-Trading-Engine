@@ -193,7 +193,7 @@ def slope_calc(in_list):
     return sm.OLS(in_list, cnstnt).fit().params[-1]  # slope
 
 
-def slope2(in_list, period):
+def slope_single_val(in_list, period):
     '''
     Calculcate the slope from OLS for the last n periods from current
     '''
@@ -205,7 +205,106 @@ def slope2(in_list, period):
     X = sm.add_constant(X)
     model = sm.OLS(Y,X)
     results = model.fit()
-    results.params[-1]
+
+    return results.params[-1]
+
+
+def slopex(in_list, period):
+    '''
+    Calculcate the slope from OLS for the last n periods from current
+    '''
+    np.apply_along_axis(slope2, 0, close, 3)
+    h_scalar = np.vectorize(lambda x: x*2)
+    h_scalar(close)
+
+    def doit(x):
+        return x*3
+    def doit3(x):
+        return x[-1]*3
+
+    f = np.vectorize(doit)
+    f(close)
+
+    #Y = [1,3,4,5,2,3,4]
+    def doit2(x,period):
+        Y = x
+        #Y = Y[-4:]  # subset range of Y
+        Y = Y[-period:]  # subset range of Y
+        X = range(1,len(Y)+1)
+        X = sm.add_constant(X)
+        model = sm.OLS(Y,X)
+        results = model.fit()
+    f2 = np.vectorize(doit2)
+    f2(close,3)
+    close.rolling(50).apply(doit2).tail(20)
+
+
+    def doit4(x):
+        Y = x
+        #Y = Y[-4:]  # subset range of Y
+        Y = Y[-3:]  # subset range of Y
+        X = range(1,len(Y)+1)
+        X = sm.add_constant(X)
+        model = sm.OLS(Y,X)
+        results = model.fit()
+        return results.params[-1]
+    close.rolling(50).apply(doit4).tail(20)
+
+    def doit5(x,period):
+        Y = x
+        #Y = Y[-4:]  # subset range of Y
+        Y = Y[-period:]  # subset range of Y
+        X = range(1,len(Y)+1)
+        X = sm.add_constant(X)
+        model = sm.OLS(Y,X)
+        results = model.fit()
+        return results.params[-1]
+    close.rolling(50).apply(lambda x: doit5(x,3)).tail(20)
+
+    close.rolling(50).apply(lambda x: doit2(x,5)).tail(20)
+    close.rolling(50).apply(lambda x: sum(x)).tail(20)
+
+
+    return results.params[-1]
+
+# def slope2(series, period):
+#     def doit5(x,period):
+#         Y = x
+#         #Y = Y[-4:]  # subset range of Y
+#         Y = Y[-period:]  # subset range of Y
+#         X = range(1,len(Y)+1)
+#         X = sm.add_constant(X)
+#         model = sm.OLS(Y,X)
+#         results = model.fit()
+#         return results.params[-1]
+#
+#     rolling_slope = series.rolling(10).apply(lambda x: doit5(x,period))
+#
+#     return rolling_slope
+
+def liregslope(series, period):
+    '''
+    Calculate a rolling window linear regression slope over n periods
+
+    input
+        series - pandas Series object
+        period - lookback periods for rolling window
+    output
+        pandas Series with the rolling slope
+    '''
+    def get_slope(x):
+        Y = x
+        #Y = Y[-period:]  # subset range of Y
+        X = range(1,len(Y)+1)
+        X = sm.add_constant(X)
+        model = sm.OLS(Y,X)
+        results = model.fit()
+        return results.params[-1]
+
+    # rolling_slope = series.rolling(period).apply(lambda x: get_slope(x))
+    rolling_slope = series.rolling(period).apply(get_slope)
+
+    return rolling_slope
 
 
 def velocity(in_list, period=20):
@@ -263,8 +362,8 @@ def hurst(ts):
 
 def volatility(series, period):
     '''
-    The moving historical standard deviation of the log returns—i.e. the moving
-    historical volatility—might be more of interest:
+    The moving historical standard deviation of the log returns, i.e. the moving
+    historical volatility, might be more of interest:
         Also make use of pd.rolling_std(data, window=x) * math.sqrt(window) for
         the moving historical standard deviation of the log returns (aka the
         moving historical volatility).
@@ -326,8 +425,8 @@ def SCTR(series):
     ema12 = talib.EMA(close.values, 12)
     roc125 = (close - close.shift(125)) / (close.shift(125)*1.)
     roc20 = (close - close.shift(20)) / (close.shift(20)*1.)
-    ppo = talib.PPO(dff.a.values, 12, 26)
-    rsi = talib.RSI(close, 14)
+    ppo = pd.Series(talib.PPO(close.values, 12, 26), index=close.index)
+    rsi = pd.Series(talib.RSI(close.values, 14), index=close.index)
 
     # Weights
     LT_EMA = (close - ema200) / (ema200*1.) * 100 * 0.3
@@ -336,11 +435,17 @@ def SCTR(series):
     MT_EMA = (close - ema50) / (ema50*1.) * 100 * 0.15
     MT_ROC = roc20 * 100 * 0.15
 
-    PPO_HIST = ppo - talib.EMA(ppo, 9)
-    SLOPE = slope2(PPO_HIST, 3)
+    PPO_HIST = ppo - talib.EMA(ppo.values, 9)
+    SLOPE = liregslope(PPO_HIST, 3)
     ST_PPO = (SLOPE >= 1) * 0.05 * 100   # Should be 5 points, not .05
     ST_RSI = rsi * 0.05
 
-    SCTR = LT_EMA + LT_ROC + MT_EMA + MT_ROC + ST_PPO + ST_RSI;
+    SCTR = LT_EMA + LT_ROC + MT_EMA + MT_ROC + ST_PPO + ST_RSI
+
+    # for debugging
+    dct = {'SCTR':SCTR, 'close':close, 'slope':SLOPE,
+           'LT_EMA':LT_EMA,'LT_ROC':LT_ROC,'MT_EMA':MT_EMA,
+           'MT_ROC':MT_ROC,'ST_PPO':ST_PPO,'ST_RSI':ST_RSI}
+    df = pd.DataFrame(dct, index=close.index)
 
     return SCTR
