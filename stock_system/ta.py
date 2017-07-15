@@ -171,117 +171,6 @@ def run_holt_winters_second_order_ewma(series, period, beta):
     return s
 
 
-# def get_lin_reg_slope(df, period):
-#     import statsmodels.api as sm
-#
-#     Y = df[-period:].close.values
-#     X = range(1, period+1)
-#     # dates = df.index.to_julian_date().values[-period:, None]
-#     # X = np.concatenate([np.ones_like(dates), dates], axis=1)
-#     X = sm.add_constant(X)
-#     model = sm.OLS(Y, X)
-#     results = model.fit()
-#     intercept = results.params[0]
-#     slope = results.params[1]
-#
-#     return (intercept, slope)
-def slope_calc(in_list):
-    '''
-    http://www.statsmodels.org/dev/generated/statsmodels.regression.linear_model.OLS.html
-    '''
-    cnstnt = sm.add_constant(range(-len(in_list) + 1, 1))
-    return sm.OLS(in_list, cnstnt).fit().params[-1]  # slope
-
-
-def slope_single_val(in_list, period):
-    '''
-    Calculcate the slope from OLS for the last n periods from current
-    '''
-    #Y = [1,3,4,5,2,3,4]
-    Y = in_list
-    #Y = Y[-4:]  # subset range of Y
-    Y = Y[-period:]  # subset range of Y
-    X = range(1,len(Y)+1)
-    X = sm.add_constant(X)
-    model = sm.OLS(Y,X)
-    results = model.fit()
-
-    return results.params[-1]
-
-
-def slopex(in_list, period):
-    '''
-    Calculcate the slope from OLS for the last n periods from current
-    '''
-    np.apply_along_axis(slope2, 0, close, 3)
-    h_scalar = np.vectorize(lambda x: x*2)
-    h_scalar(close)
-
-    def doit(x):
-        return x*3
-    def doit3(x):
-        return x[-1]*3
-
-    f = np.vectorize(doit)
-    f(close)
-
-    #Y = [1,3,4,5,2,3,4]
-    def doit2(x,period):
-        Y = x
-        #Y = Y[-4:]  # subset range of Y
-        Y = Y[-period:]  # subset range of Y
-        X = range(1,len(Y)+1)
-        X = sm.add_constant(X)
-        model = sm.OLS(Y,X)
-        results = model.fit()
-    f2 = np.vectorize(doit2)
-    f2(close,3)
-    close.rolling(50).apply(doit2).tail(20)
-
-
-    def doit4(x):
-        Y = x
-        #Y = Y[-4:]  # subset range of Y
-        Y = Y[-3:]  # subset range of Y
-        X = range(1,len(Y)+1)
-        X = sm.add_constant(X)
-        model = sm.OLS(Y,X)
-        results = model.fit()
-        return results.params[-1]
-    close.rolling(50).apply(doit4).tail(20)
-
-    def doit5(x,period):
-        Y = x
-        #Y = Y[-4:]  # subset range of Y
-        Y = Y[-period:]  # subset range of Y
-        X = range(1,len(Y)+1)
-        X = sm.add_constant(X)
-        model = sm.OLS(Y,X)
-        results = model.fit()
-        return results.params[-1]
-    close.rolling(50).apply(lambda x: doit5(x,3)).tail(20)
-
-    close.rolling(50).apply(lambda x: doit2(x,5)).tail(20)
-    close.rolling(50).apply(lambda x: sum(x)).tail(20)
-
-
-    return results.params[-1]
-
-# def slope2(series, period):
-#     def doit5(x,period):
-#         Y = x
-#         #Y = Y[-4:]  # subset range of Y
-#         Y = Y[-period:]  # subset range of Y
-#         X = range(1,len(Y)+1)
-#         X = sm.add_constant(X)
-#         model = sm.OLS(Y,X)
-#         results = model.fit()
-#         return results.params[-1]
-#
-#     rolling_slope = series.rolling(10).apply(lambda x: doit5(x,period))
-#
-#     return rolling_slope
-
 def liregslope(series, period):
     '''
     Calculate a rolling window linear regression slope over n periods
@@ -316,6 +205,7 @@ def velocity(in_list, period=20):
     '''
     series = close + (in_list * close) / period
     return series[-1]
+
 
 def hurst(ts):
     '''
