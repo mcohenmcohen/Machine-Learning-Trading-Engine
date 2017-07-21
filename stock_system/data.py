@@ -113,6 +113,36 @@ class DataUtils(object):
         return(pd.concat(datas, keys=symbols, names=['Symbol', 'Date']))
 
     ##################################
+    # get data from pandas_datareader
+    ##################################
+    def get_data_pweb(self, symbol, source='yahoo', start_date, end_date=''):
+        '''
+        Get data via pandas web io
+
+        input:
+            symbol - string
+            start_date - datetime.datetime
+            end_date - datetime.datetime
+        output:
+            dataframe of daily data
+
+        eg,
+            import datetime
+            import pandas.io.data as web
+
+            AAPL = web.DataReader('AAPL', data_source='google')
+            # reads data from Google Finance
+            AAPL['42d'] = pd.rolling_mean(AAPL['Close'], 42)
+            AAPL['252d'] = pd.rolling_mean(AAPL['Close'], 252)
+            # 42d and 252d trends
+        '''
+        import pandas.io.data as web
+
+        sym_data = web.DataReader(symbol, data_source=source)
+        return sym_data
+
+
+    ##################################
     # get data from Quandl
     ##################################
     def get_data_quandl(self, symbol):
