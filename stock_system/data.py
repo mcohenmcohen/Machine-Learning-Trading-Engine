@@ -113,9 +113,9 @@ class DataUtils(object):
         return(pd.concat(datas, keys=symbols, names=['Symbol', 'Date']))
 
     ##################################
-    # get data from pandas_datareader
+    # get data from pandas.io.web
     ##################################
-    def get_data_pweb(self, symbol, source='yahoo', start_date, end_date=''):
+    def get_data_pweb(self, symbol, source='yahoo', start, end):
         '''
         Get data via pandas web io
 
@@ -130,7 +130,7 @@ class DataUtils(object):
             import datetime
             import pandas.io.data as web
 
-            AAPL = web.DataReader('AAPL', data_source='google')
+            AAPL = web.DataReader('AAPL', data_source='google', start='1/1/2010', end='1/1/2016')
             # reads data from Google Finance
             AAPL['42d'] = pd.rolling_mean(AAPL['Close'], 42)
             AAPL['252d'] = pd.rolling_mean(AAPL['Close'], 252)
@@ -138,7 +138,7 @@ class DataUtils(object):
         '''
         import pandas.io.data as web
 
-        sym_data = web.DataReader(symbol, data_source=source)
+        sym_data = web.DataReader(symbol, data_source=source, start=start, end=end)
         return sym_data
 
 
