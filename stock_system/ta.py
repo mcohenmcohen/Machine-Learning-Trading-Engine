@@ -283,6 +283,8 @@ def volatility(series, period):
 
 def SCTR(series):
     '''
+    Calculate the SCTR indiciator for one price series.
+
     stockcharts.com SCTR indicator
     - http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:sctr
 
@@ -339,3 +341,28 @@ def SCTR(series):
     df = pd.DataFrame(dct, index=close.index)
 
     return SCTR
+
+
+def SCTR_ranks(sctr_df):
+    '''
+    Calculate the SCTR ranks for a multiple symbols compared to each other.
+
+    Sort the SCTRs, split into deciles, within each decile rank again
+    equally spaced.
+
+    Input:
+        sqtr_df - Dataframe of symbols and SCTR ranks of the form:
+
+                    AAPL    MSFT    TSLA
+        date
+        1/1/2000    12.3    23.4    6.78
+        ...
+    Output:
+        sqtr_rank_df - padas dataframe of the same form, but with ranks rather
+        than values.
+    '''
+    sctr_ranks_df = sctr_df.copy()
+    for i in range(0, sctr_ranks_df.shape[0]):
+        sctr_ranks_df.iloc[i] = sctr_ranks_df.iloc[i].fillna(-1000).rank(pct=True) * 100
+
+    return sctr_ranks_df

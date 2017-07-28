@@ -102,44 +102,65 @@ class DataUtils(object):
                                       start=datetime.datetime(2006, 10, 1))
             aapl.tail()
         '''
+        global cnt
+        cnt = 1
+        num_syms = len(symbols)
         def data(symbol):
+            global cnt
+            print 'Getting symbol %s (%d) of %d' % (symbol, cnt, num_syms)
             if end_date:
                 sym_df = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
             else:
                 sym_df = pdr.get_data_yahoo(symbol, start=start_date)
+            cnt += 1
             return sym_df
+        #cnt = 1
 
-        datas = map (data, symbols)
+        datas = map(data, symbols)
+
         return(pd.concat(datas, keys=symbols, names=['Symbol', 'Date']))
+        # global count
+        # count = 1
+        # num_syms = 100
+        # def data(symbol='wqer'):
+        #     global count
+        #     print 'Getting symbol %s (%d) of %d' % (symbol, count, num_syms)
+        #     #if end_date:
+        #     #    sym_df = pdr.get_data_yahoo(symbol, start=start_date, end=end_date)
+        #     #else:
+        #     #    sym_df = pdr.get_data_yahoo(symbol, start=start_date)
+        #     count += 1
+        # return data('hi')
 
     ##################################
     # get data from pandas.io.web
     ##################################
-    def get_data_pweb(self, symbol, source='yahoo', start, end):
-        '''
-        Get data via pandas web io
-
-        input:
-            symbol - string
-            start_date - datetime.datetime
-            end_date - datetime.datetime
-        output:
-            dataframe of daily data
-
-        eg,
-            import datetime
-            import pandas.io.data as web
-
-            AAPL = web.DataReader('AAPL', data_source='google', start='1/1/2010', end='1/1/2016')
-            # reads data from Google Finance
-            AAPL['42d'] = pd.rolling_mean(AAPL['Close'], 42)
-            AAPL['252d'] = pd.rolling_mean(AAPL['Close'], 252)
-            # 42d and 252d trends
-        '''
-        import pandas.io.data as web
-
-        sym_data = web.DataReader(symbol, data_source=source, start=start, end=end)
-        return sym_data
+    # def get_data_pweb(self, symbol, start, end, source='yahoo'):
+    #     '''
+    #     Get data via pandas web io
+    #     ** DEPRECATED.  Use pandas datareader
+    #
+    #     input:
+    #         symbol - string
+    #         start_date - datetime.datetime
+    #         end_date - datetime.datetime
+    #     output:
+    #         dataframe of daily data
+    #
+    #     eg,
+    #         import datetime
+    #         import pandas.io.data as web
+    #
+    #         AAPL = web.DataReader('AAPL', data_source='google', start='1/1/2010', end='1/1/2016')
+    #         # reads data from Google Finance
+    #         AAPL['42d'] = pd.rolling_mean(AAPL['Close'], 42)
+    #         AAPL['252d'] = pd.rolling_mean(AAPL['Close'], 252)
+    #         # 42d and 252d trends
+    #     '''
+    #     import pandas.io.data as web
+    #
+    #     sym_data = web.DataReader(symbol, data_source=source, start=start, end=end)
+    #     return sym_data
 
 
     ##################################
