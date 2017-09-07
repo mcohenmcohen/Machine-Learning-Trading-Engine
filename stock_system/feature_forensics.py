@@ -168,6 +168,27 @@ def run_cov_matrix(ts, df):
     corr_df.to_csv('_CorrelationMatrix.csv')
     corr_top_df.to_csv('_CorrelationTopMatrix.csv')
 
+
+def VWAP(in_df):
+    '''
+    Volume Weighted Average Price (VWAP)
+
+    The volume weighted average price (VWAP) is a trading benchmark used
+    especially in pension plans. VWAP is calculated by adding up the
+    dollars traded for every transaction (price multiplied by number of shares
+    traded) and then dividing by the total shares traded for the day.
+
+    The theory is that if the price of a buy trade is lower than the VWAP, it
+    is a good trade. The opposite is true if the price is higher than the VWAP.
+    '''
+    pass
+
+def TWAP(in_df):
+    '''
+    Time Weighted Average Price (TWAP)
+    '''
+    pass
+
 if __name__ == '__main__':
     db = DataUtils.DataUtils()
     m = ModelUtils.ModelUtils()

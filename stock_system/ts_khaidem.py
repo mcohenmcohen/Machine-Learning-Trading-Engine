@@ -6,7 +6,7 @@ Trading System to replicate study
 
 import numpy as np
 from stock_system.trading_system import TradingSystem
-from stock_system import TA
+from stock_system import ta
 
 
 class TradingSystem_Khaidem(TradingSystem):
@@ -24,8 +24,8 @@ class TradingSystem_Khaidem(TradingSystem):
         Perform any data preprocessing steps such as normalizing, smoothing,
         remove correlated columns, etc
         '''
-        df = TA.run_exp_smooth(df, alpha=.5)
-        df = TA.run_techicals(df)
+        df = ta.run_exp_smooth(df, alpha=.5)
+        df = ta.run_techicals(df)
 
         # Impute - delete rows with Nan and null, will be the first several rows
         for name in df.columns:

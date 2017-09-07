@@ -9,7 +9,7 @@ to contiue experimentation with.
 import numpy as np
 from sklearn.preprocessing import Imputer
 from stock_system.trading_system import TradingSystem
-from stock_system import TA
+from stock_system import ta
 import talib
 
 
@@ -99,10 +99,10 @@ class TradingSystem_Comp(TradingSystem):
 
         # Non-normalized columns
         # stats
-        df['roc1'] = TA.rate_of_change(close, 1)  # highly correlated with daily returns
-        df['roc2'] = TA.rate_of_change(close, 2)
-        df['roc5'] = TA.rate_of_change(close, 5)
-        df['slope20'] = df['close'].rolling(window=20).apply(TA.slope_calc)
+        df['roc1'] = ta.rate_of_change(close, 1)  # highly correlated with daily returns
+        df['roc2'] = ta.rate_of_change(close, 2)
+        df['roc5'] = ta.rate_of_change(close, 5)
+        df['slope20'] = ta.liregslope(df['close'], 20)
         df['velocity'] = df['close'] + (df['slope20'] * df['close']) / 20
         df['stdClose20'] = df['close'].shift(1).rolling(window=20).std()
         df['zscore'] = (df['close'] - df['close'].shift(1).rolling(window=20).mean()) / df['stdClose20']
@@ -143,7 +143,7 @@ class TradingSystem_Comp(TradingSystem):
 
         # ** Unused features **
         # df['log_close'] = np.log(close)
-        # df = TA.run_exp_smooth(df, alpha=.5)
+        # df = ta.run_exp_smooth(df, alpha=.5)
         # opn_sm = df['exp_smooth_open']
         # high_sm = df['exp_smooth_high']
         # low_sm = df['exp_smooth_low']
@@ -154,7 +154,7 @@ class TradingSystem_Comp(TradingSystem):
         # df['MA3Over5'] = (df['close'].rolling(window=3).mean() > df['close'].shift(1).rolling(window=5).mean()).astype(int)
         # df['MA5Over10'] = (df['close'].rolling(window=5).mean() > df['close'].shift(1).rolling(window=10).mean()).astype(int)
         # df['MA5ver20'] = (df['close'].rolling(window=5).mean() > df['close'].shift(1).rolling(window=20).mean()).astype(int)
-        # df['hurst'] = TA.hurst(close)
+        # df['hurst'] = ta.hurst(close)
         # daily_p = history(bar_count=100, frequency='1d', field='price')
         # daily_ret = daily_p.pct_change()
         # daily_log = np.log1p(daily_ret)
