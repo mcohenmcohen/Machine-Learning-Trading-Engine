@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 import talib
+import time
 # https://github.com/mrjbq7/ta-lib
 # index - https://github.com/mrjbq7/ta-lib/blob/master/docs/index.md
 # documentation: https://github.com/mrjbq7/ta-lib/blob/master/docs/func.md
@@ -281,7 +282,32 @@ def volatility(series, period):
     vol.plot(figsize=(10, 8))
 
 
-def SCTR(series):
+def SCTR(df, series_name):
+    '''
+    Calculate StockCharts SCTR scores
+
+    Input
+        df - a pandas datareader structured dataframe with multi-index of
+             symbols, datetime
+        series_name - The price series column name to use for the SCTR calc.
+             Probably 'Close'.
+    Output
+        pabdas series - a 'SCTR' column to be added to the dataframe
+    '''
+    dff = df.copy()
+
+    t1 = time.time()
+    dff['SCTR_raw'] = SCTR_raw(dff[series_name])
+    t2 = time.time()
+    print "Time to process SCTR scores: " + str((t2 - t1)) + "\n"
+
+    SCTRs = dff[['SCTR_raw']].reset_index().pivot('Date', 'Symbol', 'SCTR_raw')
+    ranks = SCTR_ranks(SCTRs)
+
+    sctr_series = ranks.stack().swaplevel().sort_index(level=0)
+    return sctr_series
+
+def SCTR_raw(series):
     '''
     Calculate the SCTR indiciator for one price series.
 
@@ -290,6 +316,9 @@ def SCTR(series):
 
     Input:
         series - pandas Series.  Should be the close.
+    Output
+        series of raw SCTR values.  Note, this isn't normalized.
+                                    Use function SCTR_ranks for that.
 
     Calculation:
 
@@ -362,7 +391,10 @@ def SCTR_ranks(sctr_df):
         than values.
     '''
     sctr_ranks_df = sctr_df.copy()
+
+    # for each date...
     for i in range(0, sctr_ranks_df.shape[0]):
+        # fill NAs with -1000 and rank the column values (now transposed as a series)
         sctr_ranks_df.iloc[i] = sctr_ranks_df.iloc[i].fillna(-1000).rank(pct=True) * 100
 
     return sctr_ranks_df
