@@ -13,7 +13,7 @@ def get_data():
     #usage =
     usage = 'Usage: \n' \
         '  -d : Datasource as \'iqf\' or \'pdr\'\n' \
-        '  -s : Comma separated string of symbols\n' \
+        '  -s : (Optional) Comma separated string of symbols\n' \
         'Example in python shell: \n' \
         '  run loader.py -d pdr -s \'APPL,MSFT\'\n'
     if len(sys.argv) == 1:
@@ -39,11 +39,7 @@ def get_data():
                 print 'Data source %s is not valid.  Must be one of: %s' % (arg_source, ', '.join(valid_sources))
                 print usage
                 return
-        if '-s' not in arg_dict:
-                print 'Must provide comma separated sting of symbols to download.'
-                print usage
-                return
-        elif arg == '-s':
+        if arg == '-s':
             arg_syms = arg_dict['-s']
             if len(arg_syms) == 0:
                 print 'Symbols must be comma separated string'
@@ -54,7 +50,7 @@ def get_data():
 
 
     ## Here's where you'd assign symbols to download if you override the command line
-    # syms = pd.read_csv('_data/Top_vol_and_weeklies.csv')['Symbol'].tolist()
+    syms = pd.read_csv('_data/Top_vol_and_weeklies.csv')['Symbol'].tolist()
     # syms = ['AAPL', 'MSFT']
 
     utils = DataUtils()
