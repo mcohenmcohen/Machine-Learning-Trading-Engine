@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 
-class DataFeed(object):
+class IQFeed(object):
     '''
     This class provides IQFeed data access services to retrieve stock symbol data
     '''
@@ -57,6 +57,9 @@ class DataFeed(object):
             data = buffer
 
         sock.close
+
+        # Remove trailing ENDMSG
+        data = data.replace('!ENDMSG!', '')
 
         return data
 
@@ -110,27 +113,3 @@ class DataFeed(object):
         Output: ? TBD
         '''
         pass
-
-
-if __name__ == "__main__":
-    # Define server host, port and symbols to download
-    host = "127.0.0.1"  # Localhost
-    port = 9100  # Historical data socket port
-    syms = ["SPY", "AAPL", "GOOG", "AMZN"]
-
-    # Download each symbol to disk
-    for sym in syms:
-        # import pdb; pdb.set_trace()
-        print "Downloading symbol: %s..." % sym
-
-        # Construct the message needed by IQFeed to retrieve data
-        message = "HIT,%s,60,20140101 075000,,,093000,160000,1\n" % sym
-
-        data = feed.get_data(message)
-        data = "".join(data.split("\r"))
-        data = data.replace(",\n", "\n")[:-1]
-
-        # Write the data as .csv to disk
-        f = open("%s.csv" % sym, "w")
-        f.write(data)
-        f.close()

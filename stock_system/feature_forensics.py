@@ -25,7 +25,7 @@ def run(df, model, feature_set, rfe_num_feat):
     check_rfe(df, model, feature_set, rfe_num_feat)
 
 
-def check_corr(df, feature_set):
+def check_corr(df, feature_set, print_matrix=False):
     '''
     Get/print a correlation matrix to assist in identifying correlated columns
     '''
@@ -33,9 +33,9 @@ def check_corr(df, feature_set):
     # df = self.df.copy()
     # import pdb; pdb.set_trace()
     df = df[feature_set]  # Use only sub set features
-    print "Correlation Matrix"
-    print df.corr()
-    print
+    if print_matrix:
+        print "Correlation Matrix"
+        print df.corr()
 
     def get_redundant_pairs(df):
         '''
@@ -57,7 +57,7 @@ def check_corr(df, feature_set):
     print("Top Absolute Correlations")
     print(get_top_abs_correlations(df, 100))
 
-    return (df.corr(), get_top_abs_correlations(df, 100))
+    #return (df.corr(), get_top_abs_correlations(df, 100))
 
 
 def check_mic(df, feature_set):
