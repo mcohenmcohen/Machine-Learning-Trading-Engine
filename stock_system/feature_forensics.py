@@ -117,7 +117,7 @@ def check_rfe(in_df, model, feature_set, num_top_features):
     estimator = model
     selector = RFE(estimator, num_top_features, step=1)
 
-    print 'Fitting RFE (this can take a while with many features.  This trading system has %s features)' % X.shape[1]
+    print 'Fitting RFE (this can take a while with many features.  This trading system  has %s features)' % X.shape[1]
     import time; t1 = time.time()
     selector = selector.fit(X, y)
     t2 = time.time(); print "Done. RFE processing time: " + str((t2 - t1))

@@ -166,7 +166,7 @@ class TradingSystem_Comp(TradingSystem):
         # Now that we've calculated the features above,
         # save off the names to a list
         self.features = [col for col in df.columns
-                         if col not in self.excluded_features]
+                         if col not in self.excluded_features] 
         self._generate_target()
 
         return self.df

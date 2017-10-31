@@ -80,7 +80,7 @@ class ModelUtils(object):
             model = GradientBoostingRegressor(
                 n_estimators=500,
                 random_state=0,
-                learning_rate=0.1
+                learning_rate=0.1 
             )
         elif model_name == 'knn':
             model = KNeighborsClassifier()
