@@ -44,7 +44,7 @@ class ModelUtils(object):
         Input:
             model_name - short hand refernce to an sklearn model.
                 Must be a valid element in model_list
-        Output:
+        Return:
             sklearn model of the given name.  Parameter values are preset.
         TODO: configurable parameters
         '''
@@ -102,6 +102,7 @@ class ModelUtils(object):
             raise ValueError(err)
 
         self.model = model
+        return model
 
     def get_model(self):
         '''
@@ -269,6 +270,7 @@ class ModelUtils(object):
         '''
         fit the model and return scores
         '''
+        #import pdb; pdb.set_trace()
         X_train = self.X_train
         y_train = self.y_train
         X_test = self.X_test

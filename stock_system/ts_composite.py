@@ -21,7 +21,7 @@ class TradingSystem_Comp(TradingSystem):
         self.features = []  # X feature column names
         TradingSystem.__init__(self)
 
-    def preprocess(self, data):
+    def preprocess(self, in_df):
         '''
         Build feature columns added to the input data frame.
         Includes creating features from technical indiator, and any data
@@ -36,7 +36,7 @@ class TradingSystem_Comp(TradingSystem):
             dataframe
                 The modified dataframe with feature columns added
         '''
-        df = data.copy()
+        df = in_df.copy()
 
         # Smoothed price series to be used in generating other
         # technical indicators
@@ -85,9 +85,9 @@ class TradingSystem_Comp(TradingSystem):
         stok, df['stod'] = talib.STOCH(high.values, low.values, close.values, fastk_period=5, slowk_period=3,
                                              slowk_matype=0, slowd_period=3, slowd_matype=0)
         df['deltabWidth310'] = df['bWidth3'] - np.roll(df['bWidth3'], 10)
-        df['atr7'] = talib.ATR(high.values, low.values, close.values, timeperiod=7)
+        #df['atr7'] = talib.ATR(high.values, low.values, close.values, timeperiod=7)
         df['ATRrat1020'] = talib.ATR(high.values, low.values, close.values, timeperiod=10) / talib.ATR(high.values, low.values, close.values, timeperiod=20)
-        df['ATRrat10100'] = talib.ATR(high.values, low.values, close.values, timeperiod=10) / talib.ATR(high.values, low.values, close.values, timeperiod=100)
+        #df['ATRrat10100'] = talib.ATR(high.values, low.values, close.values, timeperiod=10) / talib.ATR(high.values, low.values, close.values, timeperiod=100)
 
         # Normalize all columns above but these defaults:
         cols = [col for col in df.columns if col not in self.excluded_features]
@@ -99,38 +99,38 @@ class TradingSystem_Comp(TradingSystem):
 
         # Non-normalized columns
         # stats
-        df['roc1'] = ta.rate_of_change(close, 1)  # highly correlated with daily returns
-        df['roc2'] = ta.rate_of_change(close, 2)
+        #df['roc1'] = ta.rate_of_change(close, 1)  # highly correlated with daily returns
+        #df['roc2'] = ta.rate_of_change(close, 2)
         df['roc5'] = ta.rate_of_change(close, 5)
         df['slope20'] = ta.liregslope(df['close'], 20)
         df['velocity'] = df['close'] + (df['slope20'] * df['close']) / 20
         df['stdClose20'] = df['close'].shift(1).rolling(window=20).std()
         df['zscore'] = (df['close'] - df['close'].shift(1).rolling(window=20).mean()) / df['stdClose20']
         # Oscilattors are by design already normalized
-        df['mom3'] = talib.MOM(close.values, timeperiod=3)
-        df['mom10'] = talib.MOM(close.values, timeperiod=10)  # 2 week momentum
+        #df['mom3'] = talib.MOM(close.values, timeperiod=3)
+        #df['mom10'] = talib.MOM(close.values, timeperiod=10)  # 2 week momentum
         df['mom20'] = talib.MOM(close.values, timeperiod=20)  # 4 week momentum
-        df['mom10accel'] = df['mom10'] - df['mom10'].shift(4)  # 4 days diff
+        #df['mom10accel'] = df['mom10'] - df['mom10'].shift(4)  # 4 days diff
         df['mom20accel'] = df['mom20'] - df['mom20'].shift(4)  # 4 days diff
         # Price extremes
         df['HH20'] = (df['high'] > df['high'].shift(1).rolling(window=20).max()).astype(int)  # highest high in 4 weeks
-        df['HH5'] = (df['high'] > df['high'].shift(1).rolling(window=5).max()).astype(int)  # highest high in 1 week
+        #df['HH5'] = (df['high'] > df['high'].shift(1).rolling(window=5).max()).astype(int)  # highest high in 1 week
         df['LL20'] = (df['low'] < df['low'].shift(1).rolling(window=20).min()).astype(int)  # highest high in 4 weeks
         df['LL5'] = (df['low'] < df['low'].shift(1).rolling(window=5).min()).astype(int)  # highest high in 1 week
         # Candle and volume Size
         vol30 = df['volume'].shift(1).rolling(window=30).mean()
         relVolSize = df['volume'] / vol30
         relVolSize[np.isnan(relVolSize)] = 0  # impute inf to 0
-        df['relVolSize'] = relVolSize
+        #df['relVolSize'] = relVolSize
         cSize = (df['close'] - df['open']).abs()
         cSize30 = cSize.shift(1).rolling(window=30).mean()
         relCanSize = cSize / cSize30
         relCanSize[np.isnan(relCanSize)] = 0  # impute inf to 0
         df['relCanSize'] = relCanSize
         # MAs
-        df['sma5'] = talib.SMA(df['close'].values, 5)
-        df['sma20'] = talib.SMA(df['close'].values, 20)
-        df['sma50'] = talib.SMA(df['close'].values, 50)
+        #df['sma5'] = talib.SMA(df['close'].values, 5)
+        #df['sma20'] = talib.SMA(df['close'].values, 20)
+        #df['sma50'] = talib.SMA(df['close'].values, 50)
         # Last n days
         df['twoDownDays'] = ((df['close'] < df['close'].shift(1)) & (df['close'].shift(1) < df['close'].shift(2))).astype(int)
         df['threeDownDays'] = ((df['close'] < df['close'].shift(1)) & (df['close'].shift(1) < df['close'].shift(2)) & (df['close'].shift(2) < df['close'].shift(3))).astype(int)

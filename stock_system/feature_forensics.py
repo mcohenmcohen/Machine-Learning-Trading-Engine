@@ -72,9 +72,7 @@ def check_mic(df, feature_set):
 
     TODO - float to int bug
     '''
-    #import pdb; pdb.set_trace()
     # df = self.df.copy()
-
     def print_stats(mine, feature):
         print "%s MIC: %s" % (feature, mine.mic())
         # print "MAS", mine.mas()
@@ -85,7 +83,7 @@ def check_mic(df, feature_set):
     features = df[feature_set]
     # features = df['deltabWidth310']
     try:
-        y = df['y_true']
+        y = df['y_true'].copy()
     except KeyError:
         print "%s.%s: Data has no 'target' column.  Exiting." % (__name__, inspect.currentframe().f_code.co_name)
         return
@@ -107,36 +105,45 @@ def check_mic(df, feature_set):
         print_stats(mine, feature)
 
 
-def check_rfe(df, model, feature_set, num_top_features):
-    print '- model: ', model.__class__
+def check_rfe(in_df, model, feature_set, num_top_features):
+    #https://medium.com/@aneesha/recursive-feature-elimination-with-scikit-learn-3a2cbdf23fb7
     # df = self.df.copy()
     # import pdb; pdb.set_trace()
     # cols = [col for col in df.columns if col not in self.excluded_features]
-    X = df[feature_set].copy()
+    df = in_df.copy()
+    X = df[feature_set]
     y = df.pop('y_true')
-
+    #import pdb; pdb.set_trace()
     estimator = model
     selector = RFE(estimator, num_top_features, step=1)
+
+    print 'Fitting RFE (this can take a while with many features.  This trading system has %s features)' % X.shape[1]
+    import time; t1 = time.time()
     selector = selector.fit(X, y)
+    t2 = time.time(); print "Done. RFE processing time: " + str((t2 - t1))
 
-    selector.support_
-
+    # print summaries for the selection of attributes
+    #print selector.support_
+    # print selector.ranking_
     selected_features = []
+    print 'top features: '
     for i in np.argsort(selector.ranking_):
         selected_features.append(X.columns[i])
-        print X.columns[i]
+        print '-', X.columns[i]
 
     return selected_features
 
 
 #####################################
 
-def run_rfe(num_top_features, ts):
-    print '====== Feature Forensics RFE for symbol: ======'
-    m = ModelUtils.ModelUtils()
+def run_rfe(in_df, num_top_features, ts, symbol):
+    print '====== Feature Engineering RFE for symbol: %s ======' % symbol
+    m = ModelUtils()
     model_names = m.get_model_list()
     series_list = []
     #model_names = 'abr,linr,logr,lasso,ridge'.split(',')
+
+    df = in_df.copy()
     for model_name in model_names:
         # no coef_ or feature_importance_ not supported for the estimators:
         if model_name == 'knn':
@@ -147,10 +154,11 @@ def run_rfe(num_top_features, ts):
             continue
         if model_name == 'abr':
             continue
-        model = m.get_model(model_name)
+        model = m.set_model(model_name)
         # ts.check_corr()
         # ts.check_mic()
-        selected_features = ts.check_rfe(model, num_top_features)
+        print '=== Process top features for model: %s ===' % model.__class__.__name__
+        selected_features = check_rfe(df, model, ts.get_features(), num_top_features)
         feature_series = pd.Series(selected_features, name=model_name)
         series_list.append(feature_series)
 
@@ -158,7 +166,9 @@ def run_rfe(num_top_features, ts):
     model_features_df = pd.concat(series_list, join='inner',axis=1)
     # import pdb; pdb.set_trace()
     # del model_features_df['Unnamed: 0']
-    model_features_df.to_csv('_FeatureEngineering.csv')
+    f_path = '_data/_FeatureEngineering.csv'
+    print 'Write features to csv to %s' % f_path
+    model_features_df.to_csv(f_path)
 
     #pd.read_csv('_FeatureEngineering.csv',index_col=0)
 
@@ -190,17 +200,16 @@ def TWAP(in_df):
     pass
 
 if __name__ == '__main__':
-    db = DataUtils.DataUtils()
-    m = ModelUtils.ModelUtils()
-    ts = TradingSystem_Comp.TradingSystem_Comp()
+    db = DataUtils()
+    m = ModelUtils()
+    ts = TradingSystem_Comp()
 
     symbol = sys.argv[1:][0] if len(sys.argv[1:]) > 0 else 'SPY'
-    print 'Feature engineering for symbol: ', symbol
+    #print 'Feature engineering for symbol: ', symbol
 
     # get stock data from db as dataframe
     df = db.read_symbol_data(symbol, 'd')
-    df = ts.preprocess_data(df)
-    df = ts.generate_target()
+    df = ts.preprocess(df)
 
     # run_cov_matrix(ts, df)
-    run_rfe(5, ts)
+    run_rfe(df, 5, ts, symbol)

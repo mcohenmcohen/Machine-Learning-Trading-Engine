@@ -67,7 +67,7 @@ class DataUtils(object):
 
         print 'Done.'
 
-    def read_symbol_data(self, symbol, period='M'):
+    def read_symbol_data(self, symbol, period='D'):
         '''
         Extract symbol time series data from postgres by period
         Valid time periods: minute, 15 min, hour, daily, weekly
@@ -119,8 +119,8 @@ class DataUtils(object):
         e.g.:
             df = pdr.get_data_iqfeed('AAPL', start=20140101)
             df.head(1)
-                                          Open    High     Low   Close  Volume
-            Symbol Date
+                                          open    high     low   close  volume
+            symbol date
             AAPL   2014-01-02 09:31:00  555.68  556.48  555.07  556.11  453045
         '''
         dir_path = './_data/iqf_symbols'
@@ -128,8 +128,8 @@ class DataUtils(object):
         #syms = ['SPY']
 
         # Empty df to aggregate all downloaded sysmbols into
-        df_total = pd.DataFrame(columns=['Symbol','Date','Open','High','Low','Close','Volume'])
-        df_total.set_index(['Symbol', 'Date'], inplace=True)
+        df_total = pd.DataFrame(columns=['symbol','date','open','high','low','close','volume'])
+        df_total.set_index(['symbol', 'date'], inplace=True)
 
         print 'Downloading symbols from DTN IQFeed'
         feed = IQFeed()
@@ -157,12 +157,12 @@ class DataUtils(object):
 
             # read csv to dataframe
             csv = '%s/%s.csv' % (dir_path, sym)
-            cols = ['Date','High','Low','Open','Close','Volume', 'OI']
+            cols = ['date','high','low','open','close','volume','oi']
             df = pd.read_csv(csv, header=None, names=cols)#, index_col=0, infer_datetime_format=True)
-            df['Symbol'] = sym
-            del df['OI']
-            df = df[['Symbol','Date','Open','High','Low','Close','Volume']]
-            df.set_index(['Symbol', 'Date'], inplace=True)
+            df['symbol'] = sym
+            del df['oi']
+            df = df[['symbol','date','open','high','low','close','volume']]
+            df.set_index(['symbol', 'date'], inplace=True)
 
             df_total = pd.concat([df_total, df])
 
@@ -195,8 +195,8 @@ class DataUtils(object):
             df = dbutils.get_data_pdr_yahoo('AAPL',
                                          start_date=datetime.datetime(2006, 10, 1))
             df.head(1)
-                                          Open    High     Low   Close  Volume
-            Symbol Date
+                                          open    high     low   close  volume
+            symbol date
             AAPL   2014-01-02 09:31:00  555.68  556.48  555.07  556.11  453045
         '''
         if type(symbols) != list:
@@ -225,18 +225,26 @@ class DataUtils(object):
         if sym_df.__class__.__name__ == 'Panel':
             df = sym_df.to_frame()
         elif sym_df.__class__.__name__ == 'DataFrame':
-            df['Symbol'] = symbols[0]
-            df.set_index(['Symbol'], append=True, inplace=True)
+            df['symbol'] = symbols[0]
+            df.set_index(['symbol'], append=True, inplace=True)
+
+        # add 4pm hour to date for close time
+        df.index.names = ['date','symbol']
+        df.reset_index(inplace=True)
+        #df['date'] = df.index.get_level_values('date') + pd.to_timedelta(16, unit='h')
+        df['date'] = df['date'] + pd.to_timedelta(16, unit='h')
+        df.set_index(['symbol','date'], inplace=True)
 
         # Swap date and symbol for major/minor index
-        df.index.names = ['Date','Symbol']
         df = df.swaplevel(0, 1, axis=0)
-        df = df.sort_index(level='Symbol')
+        df = df.sort_index(level='symbol')
+        # set columns to lowercase
+        df.columns = map(str.lower, df.columns)
         # set close as adj close
-        del df['Close']
-        df.rename(columns={'Adj Close':'Close'}, inplace=True)
+        del df['close']
+        df.rename(columns={'adj close': 'close'}, inplace=True)
 
-        s2 = set(df.groupby('Symbol').sum().index.values.tolist())
+        s2 = set(df.index.get_level_values('symbol').unique().tolist())
         diff = [i for i in symbols if not i in s2]
         if len(diff) > 0:
             print '\nThe following symbols were not able to be downloaded:'
