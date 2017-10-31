@@ -205,9 +205,8 @@ if __name__ == '__main__':
     ts = TradingSystem_Comp()
 
     symbol = sys.argv[1:][0] if len(sys.argv[1:]) > 0 else 'SPY'
-    #print 'Feature engineering for symbol: ', symbol
 
-    # get stock data from db as dataframe
+    # get stock data from db as features dataframe from the trading system
     df = db.read_symbol_data(symbol, 'd')
     df = ts.preprocess(df)
 
