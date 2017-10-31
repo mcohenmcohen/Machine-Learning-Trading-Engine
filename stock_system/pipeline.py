@@ -48,35 +48,36 @@ if __name__ == '__main__':
 
     # Get the model, a random forest classifier in this case...
     # m = ModelUtils()
-    model = Model_RFC()
+    modeler = Model_RFC()
 
     # Run feature engineering/forensics, which identifies important features
     # This generates a csv of top features for a given model and only needs
     # to be re-run if the trading system or feature set changes
     rfe_num_feat = 10
-    feature_forensics.run(df_orig, model.get_model(), ts.get_features(), rfe_num_feat)
+    feature_forensics.run(df_orig, modeler.get_model(), ts.get_features(), rfe_num_feat)
 
     # Get features to use for the chosen model from the feature engineering
     # file.  If this file isn't generated, you need to pass the features in.
-    features = pd.read_csv('_data/_FeatureEngineering.csv', index_col=0)
+    fe_csv = feature_forensics.get_feature_engineering_file_path()
+    features = pd.read_csv(fe_csv, index_col=0)
     # Use top 10 features.  Experiment with values
-    top_features = features[model.name][0:10].tolist()
+    top_features = features[modeler.model_name][0:10].tolist()
     Xy = top_features + ['y_true']
     df_Xy = df_orig[Xy]
 
     # Split the model object's data into a train and test set
-    model.split(df_Xy)
+    modeler.split(df_Xy)
 
     # Run the backtester in normal mode
-    y_pred, scores = backtester.run_once(df_orig, model, .7)
+    y_pred, scores = backtester.run_once(df_orig, modeler, .7)
     # Run the backtester in multi mode
     # y_pred, scores = backtester.run_n_day_forecast(df_orig, model, 90, .7)
 
     # Get the scores
     # TODO: Separate scores for classifiers vs regressors
-    results_dict = model.get_scores(model.y_test, y_pred)
+    results_dict = modeler.get_scores(modeler.y_test, y_pred)
     try:
-        mat = model.standard_confusion_matrix(model.y_test, y_pred)
+        mat = modeler.standard_confusion_matrix(modeler.y_test, y_pred)
     except:
         mat = np.zeros((2, 2))
     results_dict['tp'] = mat[0][0]
@@ -86,19 +87,19 @@ if __name__ == '__main__':
 
     model_results = []
     df_model = pd.DataFrame(results_dict.values(),
-                            index=results_dict.keys(), columns=[model.name])
+                            index=results_dict.keys(), columns=[modeler.model_name])
     model_results.append(df_model)
 
     df_all_model_results = pd.concat(model_results, join='inner', axis=1)
     df_all_model_results = df_all_model_results.reindex('f1_score,precision_score,recall_score,accuracy_score,roc_auc_score,r2_score,mean_squared_error,tp,fp,tn,fn'.split(','))
-    df_all_model_results.to_csv('_ModelOutput.csv') 
+    df_all_model_results.to_csv('_ModelOutput.csv')
 
     # ** For Accounting **
     # Recreate the original dataframe of test data including the predicted
     # and true y labels
     # TODO: Refactor this
-    _df = df_orig[-model.y_test.shape[0]:].copy()
-    _df['y_true'] = model.y_test
+    _df = df_orig[-modeler.y_test.shape[0]:].copy()
+    _df['y_true'] = modeler.y_test
     _df['y_pred'] = y_pred
     _df, profit_cm = accounting.get_profit_confusion_matrix_df(_df)
     print profit_cm

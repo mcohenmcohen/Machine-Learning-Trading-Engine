@@ -80,7 +80,7 @@ class ModelUtils(object):
             model = GradientBoostingRegressor(
                 n_estimators=500,
                 random_state=0,
-                learning_rate=0.1 
+                learning_rate=0.1
             )
         elif model_name == 'knn':
             model = KNeighborsClassifier()
@@ -204,19 +204,27 @@ class ModelUtils(object):
             print "Can't print confusion matrix for regressor"
 
 
-    def print_feature_importance(self, model, df, num_feat=10):
+    def print_feature_importance(self, model, features, num_feat=10):
         '''
         Print the top n features
 
-        Input:  the (random foreset) model, dataframe of test data and columns, num features
+        Input:
+            model : the sklearn model (eg RandomForestClassifier),
+            features : list of dataframe features to sort by importance
+            num features : amount fo features for feature importance
+        Return:
+            None
         '''
+        # Feature importances are only valid for classifiers
         try:
             importances = model.feature_importances_[:num_feat]
-            features = list(df.columns[np.argsort(model.feature_importances_[:num_feat])])
-            print features
-            print np.sort(model.feature_importances_)[::-1]
+            sort_feat_impts = np.argsort(model.feature_importances_[:num_feat])
+            features = [features[idx] for idx in sort_feat_impts]
+            pairs = sorted(zip(map(lambda x: round(x, 4), model.feature_importances_), features), reverse=True)
+            for pair in pairs:
+                print '%s: %s' % (pair[1], pair[0])
         except:
-            print 'Model %s has no feature importance data' % model.__class__
+            print 'Model %s has no feature importance data' % model.__class__.__name__
             features = []
 
 

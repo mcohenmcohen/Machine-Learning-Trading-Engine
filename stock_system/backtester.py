@@ -8,7 +8,7 @@ a date range.
 import numpy as np
 
 
-def run_once(in_df, model, thresh=.5, print_on=True):
+def run_once(in_df, modeler, thresh=.5, print_on=True):
     '''
     Run the backtest on the fitted model and data set.
     We execute once - to predict the next period.
@@ -16,7 +16,7 @@ def run_once(in_df, model, thresh=.5, print_on=True):
     Input:
         in_df : dataframe (TODO: switch to np arrays)
             The cost matrix of the bipartite graph
-        model : ModelUtils object
+        modeler : ModelUtils object
             Object stores the model and scoring functions
         print_on : boolean
             Flag to print outputs
@@ -28,13 +28,15 @@ def run_once(in_df, model, thresh=.5, print_on=True):
             List of various model scores
     '''
 
+    model = modeler.get_model()
+
     df = in_df.copy()
     # Use only relevant columns for the model in X
     y = df.pop('y_true').values
     X = df.values  # All columns of the original dataframe
 
-    scores = [model.fit_predict_score(print_on=print_on)]
-    y_pred = model.model.predict(model.X_test)
+    scores = [modeler.fit_predict_score(print_on=print_on)]
+    y_pred = model.predict(modeler.X_test)
 
     if (print_on):
         print '====== Cross Val Mean Scores ======'
@@ -46,14 +48,15 @@ def run_once(in_df, model, thresh=.5, print_on=True):
                 pass
 
         print '====== Top feature imporance ======'
-        model.print_feature_importance(model, df[model.features])
+        #model.print_feature_importance(model, df[modeler.features])
+        modeler.print_feature_importance(model, modeler.features)
 
         print '====== Predict Scores ======'
-        model.get_scores(model.y_test, y_pred, print_on=print_on)
+        modeler.get_scores(modeler.y_test, y_pred, print_on=print_on)
         # y_pred = model.predict_proba(X_test)
         # y_pred = (y_pred[:,1] > thresh).astype(int)
 
-        model.print_standard_confusion_matrix(model.y_test, y_pred,)
+        modeler.print_standard_confusion_matrix(modeler.y_test, y_pred)
 
     return y_pred, scores
 

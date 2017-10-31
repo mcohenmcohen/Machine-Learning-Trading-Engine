@@ -16,13 +16,20 @@ import sys
 import pandas as pd
 
 
+def get_feature_engineering_file_path():
+    return '_data/_FeatureEngineering.csv'
+
+
 def run(df, model, feature_set, rfe_num_feat):
     print '====== Identify to Remove highly correlated variables ======'
     check_corr(df, feature_set)
+
     print '====== Feature selection via MIC ======'
-    check_mic(df, feature_set)
-    print '====== Recursive Feature Extraction ======'
-    check_rfe(df, model, feature_set, rfe_num_feat)
+    #check_mic(df, feature_set)
+
+    # RFE should be run offline via run_rfe to generate csv file
+    #print '====== Recursive Feature Extraction ======'
+    #check_rfe(df, model, feature_set, rfe_num_feat)
 
 
 def check_corr(df, feature_set, print_matrix=False):
@@ -166,7 +173,7 @@ def run_rfe(in_df, num_top_features, ts, symbol):
     model_features_df = pd.concat(series_list, join='inner',axis=1)
     # import pdb; pdb.set_trace()
     # del model_features_df['Unnamed: 0']
-    f_path = '_data/_FeatureEngineering.csv'
+    f_path = get_feature_engineering_file_path()
     print 'Write features to csv to %s' % f_path
     model_features_df.to_csv(f_path)
 

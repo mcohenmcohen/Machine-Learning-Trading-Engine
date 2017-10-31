@@ -1,5 +1,6 @@
 '''
-Instantiate a random foreset classifier with data set
+Instantiate a modeler to hold a random foreset classifier
+with data set from trading system features
 '''
 # Author:  Matt Cohen
 # Python Version 2.7
@@ -11,7 +12,7 @@ class Model_RFC(ModelUtils):
 
     def __init__(self):
         ModelUtils.__init__(self)
-        self.name = 'rfc'
+        self.model_name = 'rfc'
         self.hyperparams = {}
         self.set_model('rfc')
         self.features = []
