@@ -182,18 +182,15 @@ class DataUtils(object):
 
         input:
             symbols - list of string symbols
-            start_date - datetime.datetime
-            end_date - datetime.datetime
+            start_date - string 'yyyy-mm-dd'
+            end_date - string 'yyyy-mm-dd'
             dbwrite - write to the database.  Default is False.
         return:
             dataframe of daily data, multiindexed by symbol
 
         e.g.:
-            df = dbutils.get_data_pdr_yahoo('AAPL',
-                                         start_date=datetime.datetime(2006, 10, 1),
-                                         end_date=datetime.datetime(2012, 1, 1))
-            df = dbutils.get_data_pdr_yahoo('AAPL',
-                                         start_date=datetime.datetime(2006, 10, 1))
+            df = dbutils.get_data_pdr_yahoo('AAPL', start_date=20060101)
+            df = dbutils.get_data_pdr_yahoo('AAPL', start_date=20060101, end_date=20060101)
             df.head(1)
                                           open    high     low   close  volume
             symbol date
