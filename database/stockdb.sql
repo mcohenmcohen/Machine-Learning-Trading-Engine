@@ -31,13 +31,16 @@ SET default_with_oids = false;
 
 
 CREATE TABLE symbols (
-	Symbol character varying,
-    Date timestamp,
+    id serial primary key,
+    Symbol character varying NOT NULL,
+    Date timestamp NOT NULL,
     Open real,
     Low real,
     High real,
     Close real,
-		Volume real
+    Volume real,
+    unique (Symbol, Date)
+)
 	--Volume integer
 	-- ,PRIMARY KEY (symbol, date)
 );

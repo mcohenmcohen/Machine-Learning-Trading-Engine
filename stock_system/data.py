@@ -60,10 +60,17 @@ class DataUtils(object):
         df_copy.to_csv(f, index=False, header=False)  # removed header
         f.seek(0)  # move position to beginning of file before reading
         cursor = self.conn.cursor()
-        cursor.copy_from(f, 'symbols', columns=tuple(df_copy.columns), sep=',')
-        self.conn.commit()
+        try:
+            cursor.copy_from(f, 'symbols', columns=tuple(df_copy.columns), sep=',')
+        except pg2.IntegrityError as err:
+            for arg in err.args:
+                print arg
+            print 'Rolling back.'
+            self.conn.rollback()
+        else:
+            self.conn.commit()
+            t2 = time.time(); print "- Database write time: " + str((t2 - t1)) + "\n"
         cursor.close()
-        t2 = time.time(); print "- Database write time: " + str((t2 - t1)) + "\n"
 
         print 'Done.'
 
