@@ -162,7 +162,7 @@ class DataUtils(object):
             self.conn.rollback()
         else:
             self.conn.commit()
-            t2 = time.time(); print "\n- Database write time: " + str((t2 - t1)) + "\n"
+            t2 = time.time(); print "- Database write time: " + str((t2 - t1)) + "\n"
         self.c.close()
 
         print 'Done.'
