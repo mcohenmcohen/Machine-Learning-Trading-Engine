@@ -40,7 +40,7 @@ CREATE TABLE symbols (
     Close real,
     Volume real,
     unique (Symbol, Date)
-)
+
 	--Volume integer
 	-- ,PRIMARY KEY (symbol, date)
 );
