@@ -43,7 +43,11 @@ class DataUtils(object):
 
     def write_symbol_data(self, df):
         '''
+        *DEPRECATED*
         Write to postgres database via psycopg2 engine
+
+        This function is replaced by upsert and will be removed in a future
+        version release to avoid duplicate key errors.
 
         Input:
             Dataframe with cols:  sym, data, O, H, L, C, V
@@ -61,6 +65,9 @@ class DataUtils(object):
         f.seek(0)  # move position to beginning of file before reading
         cursor = self.conn.cursor()
         try:
+            # TODO: upsert the data rather than insert
+            # https://gist.github.com/luke/5697511
+            # https://stackoverflow.com/questions/1109061/insert-on-duplicate-update-in-postgresql/8702291#8702291
             cursor.copy_from(f, 'symbols', columns=tuple(df_copy.columns), sep=',')
         except pg2.IntegrityError as err:
             for arg in err.args:
@@ -72,6 +79,80 @@ class DataUtils(object):
             t2 = time.time(); print "- Database write time: " + str((t2 - t1)) + "\n"
         cursor.close()
 
+        print 'Done.'
+
+    def upsert(self, table_name, selector_fields, setter_fields, df):
+        '''
+        Write to postgres database via psycopg2 engine.
+        - Insert if new data, update if the symbol and date already exist
+          to avoid duplicate key errors.
+
+        This effectively replaces write_symbol_data, which will be removed
+        in a future version release.
+
+        Inputs:
+            table_name : Should the symbols table
+            selector_fields : symbol and date - the unique keys of each row
+            setter_fields : df.columns - insert all fields into the table,
+        Return:
+            None
+        '''
+        def data2csv(data):
+
+            import io, StringIO
+            f = StringIO.StringIO()  # python 2
+            #f = io.StringIO()  #  python 3
+            df_copy = df.reset_index()
+            df_copy.to_csv(f, index=False, header=False)  # removed header
+            f.seek(0)  # move position to beginning of file before reading
+
+            return f # .getvalue()
+
+        csv_data = data2csv(df)
+
+        sql_template = """
+            WITH updates AS (
+                UPDATE %(target)s t
+                    SET %(set)s
+                FROM source s
+                WHERE %(where_t_pk_eq_s_pk)s
+                RETURNING %(s_pk)s
+            )
+            INSERT INTO %(target)s (%(columns)s)
+                SELECT %(source_columns)s
+                FROM source s LEFT JOIN updates t USING(%(pk)s)
+                WHERE %(where_t_pk_is_null)s
+                --GROUP BY %(s_pk)s
+        """
+        statement = sql_template % dict(
+            target = table_name,
+            set = ',\n'.join(["%s = s.%s" % (x,x) for x in setter_fields]),
+            where_t_pk_eq_s_pk = ' AND '.join(["t.%s = s.%s" % (x,x) for x in selector_fields]),
+            s_pk = ','.join(["s.%s" % x for x in selector_fields]),
+            columns = ','.join([x for x in setter_fields]),
+            source_columns = ','.join(['s.%s' % x for x in setter_fields]),
+            pk = ','.join(selector_fields),
+            where_t_pk_is_null = ' AND '.join(["t.%s IS NULL" % x for x in selector_fields]),
+            t_pk = ','.join(["t.%s" % x for x in selector_fields]))
+
+        print '\nWriting Symbols to database'
+        import time; t1 = time.time()
+        try:
+            self.c.execute('CREATE TEMP TABLE source(LIKE %s INCLUDING ALL) ON COMMIT DROP;' % table_name);
+            self.c.copy_from(csv_data, 'source', columns=setter_fields, sep=',')
+            self.c.execute(statement)
+            self.c.execute('DROP TABLE source')
+            csv_data.close()
+        except pg2.IntegrityError as err:
+            for arg in err.args:
+                print arg
+            print 'Rolling back.'
+            self.conn.rollback()
+        else:
+            self.conn.commit()
+            t2 = time.time(); print "\n- Database write time: " + str((t2 - t1)) + "\n"
+        cursor.close()
+        
         print 'Done.'
 
     def read_symbol_data(self, symbol, period='D'):
@@ -176,7 +257,11 @@ class DataUtils(object):
         t2 = time.time();
         print '- Download time: %s' % str((t2 - t1))
         if dbwrite:
-            self.write_symbol_data(df_total)
+            # self.write_symbol_data(df_total)
+            table_name = 'symbols'
+            setter_fields = df.reset_index().columns.tolist()
+            selector_fields = ['symbol','date']
+            self.upsert(table_name, selector_fields, setter_fields, df)
 
         return df_total
 
@@ -255,7 +340,12 @@ class DataUtils(object):
             print ', '.join(diff)
 
         if dbwrite:
-            self.write_symbol_data(df)
+            # self.write_symbol_data(df)
+            table_name = 'symbols'
+            setter_fields = df.reset_index().columns.tolist()
+            selector_fields = ['symbol','date']
+            self.upsert(table_name, selector_fields, setter_fields, df)
+
 
         return df
 
