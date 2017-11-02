@@ -22,8 +22,20 @@ class DataUtils(object):
     This class provides database services for stock symbol data.
     The database is intended to be postgres.
 
-    init instantiates the database connection.
-    get_data_quandl collects data from Quandl.
+    init
+        instantiates the database connection.
+    _test
+        test the psychopg database conneciton
+    upsert
+        insert new rows, update exiting rows
+    read_symbol_data
+        read from postgress
+    get_data_iqfeed
+        collect data from IQFeed
+    get_data_pdr_yahoo
+        collect data from yahoo via pandas_datareader
+    get_data_quandl
+        collect data from Quandl
     '''
     def __init__(self):
         self.conn = pg2.connect(dbname='stocksdb', user='mcohen', host='localhost')
@@ -152,7 +164,7 @@ class DataUtils(object):
             self.conn.commit()
             t2 = time.time(); print "\n- Database write time: " + str((t2 - t1)) + "\n"
         cursor.close()
-        
+
         print 'Done.'
 
     def read_symbol_data(self, symbol, period='D'):
