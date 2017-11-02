@@ -70,7 +70,7 @@ def get_data():
 
 
     ## Here's where you'd assign symbols to download if you override the command line
-    # syms = pd.read_csv('_data/Top_vol_and_weeklies.csv')['Symbol'].tolist()
+    #syms = pd.read_csv('_data/Top_vol_and_weeklies.csv')['Symbol'].tolist()
     # syms = ['AAPL', 'MSFT']
 
     utils = DataUtils()
