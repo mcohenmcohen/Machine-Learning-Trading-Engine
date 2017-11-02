@@ -163,7 +163,7 @@ class DataUtils(object):
         else:
             self.conn.commit()
             t2 = time.time(); print "\n- Database write time: " + str((t2 - t1)) + "\n"
-        cursor.close()
+        self.c.close()
 
         print 'Done.'
 
