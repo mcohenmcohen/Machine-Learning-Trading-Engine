@@ -10,7 +10,6 @@ def get_data():
     '''
     Get symbol data from an online data source and return a dataframe
     '''
-    #usage =
     usage = 'Usage: \n' \
         '  -d  : Datasource as \'iqf\' or \'pdr\'\n' \
         '  -s  : (Optional) Comma separated string of symbols\n' \
@@ -18,9 +17,9 @@ def get_data():
         '  -ed : Optional end date, format yyyymmdd.  If not end date ' \
         'then data from start date to current are retrieved.\n' \
         'Example in python shell: \n' \
-        '  run loader.py -d pdr -s \'APPL,MSFT\' -sd \'20050101\''
+        '  run loader.py -d pdr -s \'AAPL,MSFT\' -sd \'20050101\''
     if len(sys.argv) == 1:
-        print 'No args'
+        print usage
         return
     elif len(sys.argv[1:]) % 2 != 0:
         print usage
@@ -77,7 +76,6 @@ def get_data():
     utils = DataUtils()
 
     if arg_source == 'pdr':
-        #df = utils.get_data_pdr_yahoo(syms, datetime.datetime(2013, 1, 1), dbwrite=True)
         arg_start_date = arg_start_date[0:4] + '-' + arg_start_date[4:6] + '-' + arg_start_date[6:]
         if len(arg_end_date) > 0:
             df = utils.get_data_pdr_yahoo(syms, arg_start_date, end_date=arg_end_date, dbwrite=True)
