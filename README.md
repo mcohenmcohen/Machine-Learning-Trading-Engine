@@ -6,7 +6,7 @@ The code base is comprised of these three modules:
   * loader.py - to retrieve real time and historical data.  There are two resources avaiable: pandas_datareader for yahoo data, and DTN IQFeed, which requires you provide your own connection.  On a Mac, I run this outside of python via wine windows emulator.
   * data.py - The contains the database I/O to PostgreSQL.  
   * A sql schema file is provided to build the tables.  Edit as your environment and taste dictates.
-* trading_systems
+* trading_system
   * This contains various trading systems.  Trading systems classes define the entry and exit criteria.   ts_composite is a good sandbox for trying a variety of technical analysis indicators and is an example for the process flow..  A parent class provides some helpful methods, you provide the subclass.  
 * core
   * Model classes implement models and associated hyperparameter settings.  model.py provides a variety of utilities (note: this is soon to be refactored.
