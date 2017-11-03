@@ -1,7 +1,7 @@
 # Machine Learning Trading Engine
 This application provides a python based backtesting framework to execute trading systems using various machine learning models.
 
-The code base is essentially comprised of these three modules:
+The code base is comprised of these three modules:
 * database
   * loader.py - to retrieve real time and historical data.  There are two resources avaiable: pandas_datareader for yahoo data, and DTN IQFeed, which requires you provide your own connection.  On a Mac, I run this outside of python via wine windows emulator.
   * data.py - The contains the database I/O to PostgreSQL.  
