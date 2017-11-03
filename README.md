@@ -1,14 +1,14 @@
 # Machine Learning Trading Engine
 This application provides a python based backtesting framework to execute trading systems using various machine learning models.
 
-The code base is essentially comprised of these core components:
-* A set of data access tools to retrieve stock data          
+The code base is essentially comprised of these three modules:
+* database
   * loader.py - to retrieve real time and historical data.  There are two resources avaiable: pandas_datareader for yahoo data, and DTN IQFeed, which requires you provide your own connection.  On a Mac, I run this outside of python via wine windows emulator.
   * data.py - The contains the database I/O to PostgreSQL.  
   * A sql schema file is provided to build the tables.  Edit as your environment and taste dictates.
-* The trading_systems module
+* trading_systems
   * This contains various trading systems.  Trading systems classes define the entry and exit criteria.   ts_composite is a good sandbox for trying a variety of technical analysis indicators and is an example for the process flow..  A parent class provides some helpful methods, you provide the subclass.  
-* The core module
+* core
   * Model classes implement models and associated hyperparameter settings.  model.py provides a variety of utilities (note: this is soon to be refactored.
   * backtester.py provides the engine to run your trading system on the selected stock over an n-day forecast period.  More features are to come.
   * A feature engineering module to identify important and collinear features, including helper functions are to run correlation, covariance/collinearity analysis, MIC and RFE.
