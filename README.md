@@ -3,20 +3,22 @@ This application provides a python based backtesting framework to execute tradin
 
 The code base is essentially comprised of these core components:
 * A set of data access tools to retrieve stock data          
-  * data.py - to retrieve real time and historical data from IQFeed, you provide your own connection outside of python (via wine on a Mac)
-  * iqfeed.py - for PostgreSQL.  A schema file is provided to build the tables.  Edit as your environment and taste dictates.
-* A modular framework for trading systems and models
-  * Trading systems classes define the entry and exit criteria.  A parent class provides some helpful methods.  You provide the subclass.  ts_comp is a trading system that implements a wide variety of technical analysis indicators as an example for the process flow.
+  * loader.py - to retrieve real time and historical data.  There are two resources avaiable: pandas_datareader for yahoo data, and DTN IQFeed, which requires you provide your own connection.  On a Mac, I run this outside of python via wine windows emulator.
+  * data.py - The contains the database I/O to PostgreSQL.  
+  * A sql schema file is provided to build the tables.  Edit as your environment and taste dictates.
+* The trading_systems module
+  * This contains various trading systems.  Trading systems classes define the entry and exit criteria.   ts_composite is a good sandbox for trying a variety of technical analysis indicators and is an example for the process flow..  A parent class provides some helpful methods, you provide the subclass.  
+* The core module
   * Model classes implement models and associated hyperparameter settings.  model.py provides a variety of utilities (note: this is soon to be refactored.
-* A feature engineering module to identify important and collinear features 
-  * helper functions are provided to run correlation, covariance/collinearity analysis, MIC and RFE.
-  * Feature importance and pretty print functions for regression and tree models
-* A number of plotting functions, I find more easily used at this point with a notebook.  This may take some tweaking.
-* An accounting module to calculate profit/loss scenarios (very, very thin right now and will most certainly be replaced.
+  * backtester.py provides the engine to run your trading system on the selected stock over an n-day forecast period.  More features are to come.
+  * A feature engineering module to identify important and collinear features, including helper functions are to run correlation, covariance/collinearity analysis, MIC and RFE.
+  * Feature importance and print functions for regression and tree models
+  * A number of plotting functions, I find more easily used at this point with a notebook.  This may take some tweaking.
+  * An accounting module to calculate profit/loss scenarios (very, very thin right now and will most certainly be replaced.
 
-A good place to start is by looking at pipeline.py, which runs the flow from indicating symbols to backtest on and selecting a trading system and model to run.
+A good place to start is by looking at pipeline.py, which runs the flow from indicating symbols, selecting a trading system and model to run, and backtesting through accounting.
 
-Then perform the following to set up your local environment
+Perform the following to set up your local environment:
 - database/stockdb.sql: Create the symbol table.
 - database/loader.py: Retrieve data from an online source.  pandas_datareader daily data is the current option unless you have DTN IQ feed.  In which case, run your IQ Feed plugin before executing the loader with that data source.
 - stock_system/feature_forensics: The main function runs the automated feature engineering processes that generates a csv file with the top features for the given trading system and symbol to backtest.  The csv is used in the pipeline at runtime.
@@ -26,6 +28,8 @@ Known issues:
 - The system works for classifiers. I have yet to flush out regressors, so those models may fail.
 - The neural network trading system is a work in progress.
 
-_** PS: This is a work-in-progress and as such is prone to potential bugs and sometimes large changes to the architecture of the code base._
+Caveat: This is a work-in-progress and as such is prone to potential bugs and sometimes large changes to the architecture of the code base.  
+
+Have fun, comments and feedback are welcome.
 
 
