@@ -10,11 +10,11 @@ import numpy as np
 import pandas as pd
 import psycopg2 as pg2
 from sqlalchemy import create_engine
-import quandl
-import datetime
 from pandas_datareader import data as pdr
-import os
+import quandl
 from stock_system.iqfeed import IQFeed
+import datetime
+import os
 
 
 class DataUtils(object):

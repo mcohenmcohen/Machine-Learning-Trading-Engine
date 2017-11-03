@@ -5,8 +5,8 @@ Trading System to replicate study
 # Python Version 2.7
 
 import numpy as np
-from stock_system.trading_system import TradingSystem
-from stock_system import ta
+from trading_system import TradingSystem
+import ta
 
 
 class TradingSystem_Khaidem(TradingSystem):

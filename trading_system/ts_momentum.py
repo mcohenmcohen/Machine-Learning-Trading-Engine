@@ -8,8 +8,8 @@ import numpy as np
 from sklearn.preprocessing import Imputer
 import inspect
 import talib
-from stock_system.TradingSystem import TradingSystem
-from stock_system import TA, ModelUtils
+from trading_system import TradingSystem
+from stock_system import ModelUtils
 
 
 class TradingSystem_Comp(TradingSystem):

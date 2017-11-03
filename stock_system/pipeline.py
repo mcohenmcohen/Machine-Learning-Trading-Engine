@@ -13,8 +13,8 @@ import sys
 from stock_system.data import DataUtils
 from stock_system import accounting, backtester, feature_forensics
 from stock_system.model_rfc import Model_RFC
-from stock_system.ts_composite import TradingSystem_Comp
-from stock_system.ts_khaidem import TradingSystem_Khaidem
+from trading_system.ts_composite import TradingSystem_Comp
+from trading_system.ts_khaidem import TradingSystem_Khaidem
 
 
 if __name__ == '__main__':

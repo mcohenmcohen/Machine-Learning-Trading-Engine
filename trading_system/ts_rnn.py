@@ -6,8 +6,8 @@ Trading System RNN
 
 import numpy as np
 from sklearn.preprocessing import Imputer
-from stock_system.trading_system import TradingSystem
-from stock_system import ta
+from trading_system import TradingSystem
+from trading_system import ta
 import talib
 import tensorflow
 

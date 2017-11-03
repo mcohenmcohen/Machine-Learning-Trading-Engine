@@ -4,7 +4,8 @@
 # Author:  Matt Cohen
 # Python Version 2.7
 
-from stock_system.TradingSystem import TradingSystem
+from trading_system import TradingSystem
+from trading_system import ta
 
 
 class TradingSystem_Comp(TradingSystem):

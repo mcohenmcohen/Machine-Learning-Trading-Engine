@@ -9,9 +9,9 @@ from minepy import MINE
 from sklearn.feature_selection import RFE
 import inspect
 import talib
-from stock_system.TradingSystem import TradingSystem
-from stock_system import TA, ModelUtils
-
+from trading_system import TradingSystem
+from stock_system import ModelUtils
+import ta
 
 class TradingSystem_MeanReverting(TradingSystem):
     '''

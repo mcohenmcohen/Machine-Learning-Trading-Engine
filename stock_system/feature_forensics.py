@@ -11,7 +11,7 @@ from minepy import MINE
 from sklearn.feature_selection import RFE
 from stock_system.data import DataUtils
 from stock_system.model import ModelUtils
-from stock_system.ts_composite import TradingSystem_Comp
+from trading_system.ts_composite import TradingSystem_Comp
 import sys
 import pandas as pd
 
