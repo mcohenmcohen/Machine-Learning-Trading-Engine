@@ -25,7 +25,7 @@ Perform the following to set up your local environment:
 - stock_system/pipeline:  Now you're setup to run the pipeline.  Just select your trading system and model and you should be good to go!
 
 Known issues:
-- The system works for classifiers. I have yet to flush out regressors, so those models may fail.
+- The system works with classifiers. I have yet to flush out regressors, so those models may fail.
 - The neural network trading system is a work in progress.
 
 Caveat: This is a work-in-progress and as such is prone to potential bugs and sometimes large changes to the architecture of the code base.  
