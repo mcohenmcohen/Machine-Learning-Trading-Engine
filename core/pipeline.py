@@ -55,10 +55,12 @@ if __name__ == '__main__':
 
     # Run feature engineering/forensics, which identifies important features
     # from the trading system dataframe's features.
-    # - This generates a csv of top features for a given model and only needs
-    #   to be re-run if the trading system or feature set changes
+    # - check_all runs the feature engineering functions for output only
+    # - build_fe_file generates a csv of top features for a given model and
+    #   only needs to be re-run if the trading system or feature set changes
     #rfe_num_feat = 10
     #feature_forensics.check_all(df_ts, modeler.get_model(), ts.get_features(), rfe_num_feat)
+    #feature_forensics.build_fe_file(df_ts, 4, ts, symbol)
 
     # Get the top features for the trading system dataframe to use for the chosen model.
     # The top features are ordered in a csv file via feature_forensics
@@ -76,7 +78,7 @@ if __name__ == '__main__':
         Xy = top_features + ['y_true']
     else:
         print '= Top features in csv file are not present in trading system dataframe. ' \
-              'Using existing: ', ', '.join(ts.get_features()).encode("utf-8")
+              'Using existing:\n  > ', ', '.join(ts.get_features()).encode("utf-8")
         Xy = ts.get_features() + ['y_true']
     df_Xy = df_ts[Xy]
 
@@ -91,6 +93,7 @@ if __name__ == '__main__':
 
     # Get the scores
     # TODO: Separate scores for classifiers vs regressors
+    print
     results_dict = modeler.get_scores(modeler.y_test, y_pred)
     try:
         mat = modeler.standard_confusion_matrix(modeler.y_test, y_pred)

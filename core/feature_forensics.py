@@ -30,7 +30,6 @@ def check_corr(df, feature_set, print_matrix=False):
     print '====== Run correlation matrix ======'
     # df = self.df.select_dtypes(['number'])  # Use only numeric columns
     # df = self.df.copy()
-    # import pdb; pdb.set_trace()
     df = df[feature_set]  # Use only sub set features
     if print_matrix:
         print "Correlation Matrix"
@@ -87,7 +86,7 @@ def check_mic(df, feature_set):
     except KeyError:
         print "%s.%s: Data has no 'target' column.  Exiting." % (__name__, inspect.currentframe().f_code.co_name)
         return
-    # import pdb; pdb.set_trace()
+
     for feature in features:
         # print '--- MIC for feature "%s" vs "y_true" ---' % feature
         x = df[feature]
@@ -108,12 +107,11 @@ def check_mic(df, feature_set):
 def check_rfe(in_df, model, feature_set, num_top_features):
     #https://medium.com/@aneesha/recursive-feature-elimination-with-scikit-learn-3a2cbdf23fb7
     # df = self.df.copy()
-    # import pdb; pdb.set_trace()
     # cols = [col for col in df.columns if col not in self.excluded_features]
     df = in_df.copy()
     X = df[feature_set]
     y = df.pop('y_true')
-    #import pdb; pdb.set_trace()
+
     estimator = model
     selector = RFE(estimator, num_top_features, step=1)
     print '====== Run recursive feature elimination ======'
@@ -146,8 +144,8 @@ def build_fe_file(in_df, num_top_features, ts, symbol):
     model_names = m.get_model_list()
     #model_names = 'abr,linr,logr,lasso,ridge'.split(',')
     print '====== Generate csv file of top features ======'
-    print '>>> symbol: %s' % symbol
-    print '>>> models: %s' % model_names
+    print '= symbol: %s' % symbol
+    print '= models: %s' % model_names
 
     series_list = []
 
@@ -165,22 +163,19 @@ def build_fe_file(in_df, num_top_features, ts, symbol):
         model = m.set_model(model_name)
         # ts.check_corr()
         # ts.check_mic()
-        print '=== Identify the top features for model: %s ===' % model.__class__.__name__
+        print '= Identify the top %s features for model: %s ===' % (num_top_features, model.__class__.__name__)
         selected_features = check_rfe(df, model, ts.get_features(), num_top_features)
         feature_series = pd.Series(selected_features, name=model_name)
         series_list.append(feature_series)
 
     # model_features_df = pd.concat(series_list, axis=1).reset_index()
     model_features_df = pd.concat(series_list, join='inner',axis=1)
-    model_features_df = model_features_df.swapaxes(1,0)
-    del model_features_df[0]
-    import pdb; pdb.set_trace()
-    # import pdb; pdb.set_trace()
+
     # del model_features_df['Unnamed: 0']
 
     # print 'Write features to csv to %s' % f_path
     # model_features_df.to_csv(f_path)
-    write_model_features(model_features_df, symbol, dest='db')
+    write_model_features(model_features_df, symbol, dest='csv')
 
 def run_cov_matrix(ts, df):
     print '====== Feature Forensics Covariance Matrix for symbol ======'
@@ -193,10 +188,13 @@ def get_feature_engineering_file_path():
 
 def write_model_features(model_features_df, symbol, dest='db'):
     f_path = get_feature_engineering_file_path()
-    print 'Write features to %s to %s' % (dest, f_path)
+    #import pdb; pdb.set_trace()
+    print 'Writing features to %s to %s' % (dest, f_path)
     if dest == 'csv':
         model_features_df.to_csv(f_path)
     if dest == 'db':
+        model_features_df = model_features_df.swapaxes(1,0)
+        del model_features_df[0]
         utils = DataUtils()
         table_name = 'model_top_features'
         setter_fields = model_features_df.reset_index().columns.tolist()
@@ -235,6 +233,5 @@ if __name__ == '__main__':
     # get stock data from db as features dataframe from the trading system
     df = db.read_symbol_data(symbol, 'd')
     df = ts.preprocess(df)
-    #import pdb; pdb.set_trace()
     # run_cov_matrix(ts, df)
     build_fe_file(df, 5, ts, symbol)

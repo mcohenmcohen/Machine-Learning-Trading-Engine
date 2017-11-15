@@ -35,23 +35,24 @@ def run_once(in_df, modeler, thresh=.5, print_on=True):
     y = df.pop('y_true').values
     X = df.values  # All columns of the original dataframe
 
-    scores = [modeler.fit_predict_score(print_on=print_on)]
+    #scores = [modeler.fit_predict_score(print_on=print_on)]
+    scores = [modeler.fit_predict_score()]
     y_pred = model.predict(modeler.X_test)
 
     if (print_on):
-        print '====== Cross Val Mean Scores ======'
+        print '\n====== Cross Val Mean Scores ======'
         for key in scores[0].keys():
             try:
                 mean_val = np.mean([d[key] for d in scores])
-                print '- %s: %s' % (key, mean_val)
+                print '%s: %s' % (key, mean_val)
             except:
                 pass
 
-        print '====== Top feature imporance ======'
+        print '\n====== Top feature imporance ======'
         #model.print_feature_importance(model, df[modeler.features])
         modeler.print_feature_importance(model, modeler.features)
 
-        print '====== Predict Scores ======'
+        print '\n====== Predict Scores ======'
         modeler.get_scores(modeler.y_test, y_pred, print_on=print_on)
         # y_pred = model.predict_proba(X_test)
         # y_pred = (y_pred[:,1] > thresh).astype(int)
