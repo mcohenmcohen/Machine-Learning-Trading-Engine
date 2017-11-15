@@ -10,7 +10,7 @@ from sklearn.feature_selection import RFE
 import inspect
 import talib
 from trading_system import TradingSystem
-from stock_system import ModelUtils
+from core import ModelUtils
 import ta
 
 class TradingSystem_MeanReverting(TradingSystem):

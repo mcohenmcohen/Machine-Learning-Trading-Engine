@@ -47,7 +47,7 @@ class TradingSystem_Comp(TradingSystem):
         close = df['close'].ewm(com=.8).mean()
         volume = df['volume'].astype(float)
         mean_log_close_5 = np.log(close.rolling(window=5).mean())
-
+        '''
         # ATR indicators
         atr3 = talib.ATR(high.values, low.values, close.values, timeperiod=3)
         atr10 = talib.ATR(high.values, low.values, close.values, timeperiod=10)
@@ -123,6 +123,7 @@ class TradingSystem_Comp(TradingSystem):
         vol30 = df['volume'].shift(1).rolling(window=30).mean()
         relVolSize = df['volume'] / vol30
         relVolSize[np.isnan(relVolSize)] = 0  # impute inf to 0
+        '''
         #df['relVolSize'] = relVolSize
         cSize = (df['close'] - df['open']).abs()
         cSize30 = cSize.shift(1).rolling(window=30).mean()

@@ -10,9 +10,9 @@ trading system and selected machine learning model.
 import numpy as np
 import pandas as pd
 import sys
-from stock_system.data import DataUtils
-from stock_system import accounting, backtester, feature_forensics
-from stock_system.model_rfc import Model_RFC
+from data.dataio import DataUtils
+from core import accounting, backtester, feature_forensics
+from core.model_rfc import Model_RFC
 from trading_system.ts_composite import TradingSystem_Comp
 from trading_system.ts_khaidem import TradingSystem_Khaidem
 
@@ -36,42 +36,58 @@ if __name__ == '__main__':
     # Get symbol data from the db
     print 'Retrieving symbol data for: ', symbol
     db = DataUtils()
-    df_orig = db.read_symbol_data(symbol, 'd')
+    df_sym = db.read_symbol_data(symbol, 'd')
 
     # Instantiate the trading system class
     ts = TradingSystem_Comp()
     # tsk = TradingSystem_Khaidem()
+    print '= Trading System: ', ts.__class__.__name__
 
     # Generate the trading system X features and y label
     # via the trading system preprocess
-    df_orig = ts.preprocess(df_orig)
+    df_ts = ts.preprocess(df_sym)
 
     # Get the model, a random forest classifier in this case...
     # m = ModelUtils()
     modeler = Model_RFC()
+    print '= Modeler: ', modeler.__class__.__name__
+    print '= Model: ', modeler.model.__class__.__name__
 
     # Run feature engineering/forensics, which identifies important features
-    # This generates a csv of top features for a given model and only needs
-    # to be re-run if the trading system or feature set changes
-    rfe_num_feat = 10
-    feature_forensics.run(df_orig, modeler.get_model(), ts.get_features(), rfe_num_feat)
+    # from the trading system dataframe's features.
+    # - This generates a csv of top features for a given model and only needs
+    #   to be re-run if the trading system or feature set changes
+    #rfe_num_feat = 10
+    #feature_forensics.check_all(df_ts, modeler.get_model(), ts.get_features(), rfe_num_feat)
 
-    # Get features to use for the chosen model from the feature engineering
-    # file.  If this file isn't generated, you need to pass the features in.
-    fe_csv = feature_forensics.get_feature_engineering_file_path()
-    features = pd.read_csv(fe_csv, index_col=0)
-    # Use top 10 features.  Experiment with values
-    top_features = features[modeler.model_name][0:10].tolist()
-    Xy = top_features + ['y_true']
-    df_Xy = df_orig[Xy]
+    # Get the top features for the trading system dataframe to use for the chosen model.
+    # The top features are ordered in a csv file via feature_forensics
+    # - If this file isn't generated or the top n features aren't present in the
+    #   trading system, this is bypasses and the existing trading systems
+    #   features are used.
+    num_top_features = 10  # Use top n features.  Experiment with values.
+    csv_path = feature_forensics.get_feature_engineering_file_path()
+    features = pd.read_csv(csv_path, index_col=0)
+    top_features = features[modeler.model_name][0:num_top_features].tolist()
+    # if the top features arent' in the trading system dataframe (iow, a subset)
+    # then use existing.
+    if set(top_features) < set(ts.get_features()):
+        print '= Top features ', ', '.join(top_features).encode("utf-8")
+        Xy = top_features + ['y_true']
+    else:
+        print '= Top features in csv file are not present in trading system dataframe. ' \
+              'Using existing: ', ', '.join(ts.get_features()).encode("utf-8")
+        Xy = ts.get_features() + ['y_true']
+    df_Xy = df_ts[Xy]
 
     # Split the model object's data into a train and test set
     modeler.split(df_Xy)
 
     # Run the backtester in normal mode
-    y_pred, scores = backtester.run_once(df_orig, modeler, .7)
+    print '= Running backtest...'
+    y_pred, scores = backtester.run_once(df_ts, modeler, .7)
     # Run the backtester in multi mode
-    # y_pred, scores = backtester.run_n_day_forecast(df_orig, model, 90, .7)
+    # y_pred, scores = backtester.run_n_day_forecast(df_ts, model, 90, .7)
 
     # Get the scores
     # TODO: Separate scores for classifiers vs regressors
@@ -98,7 +114,7 @@ if __name__ == '__main__':
     # Recreate the original dataframe of test data including the predicted
     # and true y labels
     # TODO: Refactor this
-    _df = df_orig[-modeler.y_test.shape[0]:].copy()
+    _df = df_ts[-modeler.y_test.shape[0]:].copy()
     _df['y_true'] = modeler.y_test
     _df['y_pred'] = y_pred
     _df, profit_cm = accounting.get_profit_confusion_matrix_df(_df)

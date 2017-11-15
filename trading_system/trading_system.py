@@ -13,7 +13,7 @@ class TradingSystem(object):
     '''
     def __init__(self):
         self.name = ''  # An optional name
-        self.excluded_features = ['symbol', 'open', 'high', 'low', 'close']
+        self.excluded_features = ['id','symbol', 'open', 'high', 'low', 'close']
 
     def preprocess(self):
         '''
@@ -27,7 +27,7 @@ class TradingSystem(object):
         Return the features used by the trading system and implementing model.
         Example features are a set of technical indicators
         '''
-        pass
+        return self.features
 
     def set_features(self, features):
         '''

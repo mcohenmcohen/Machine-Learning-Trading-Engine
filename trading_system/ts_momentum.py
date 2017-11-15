@@ -9,7 +9,7 @@ from sklearn.preprocessing import Imputer
 import inspect
 import talib
 from trading_system import TradingSystem
-from stock_system import ModelUtils
+from core import ModelUtils
 
 
 class TradingSystem_Comp(TradingSystem):

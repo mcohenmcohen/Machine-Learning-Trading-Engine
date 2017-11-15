@@ -1,8 +1,10 @@
 import socket
 import pandas as pd
 import numpy as np
-from stock_system.data import DataUtils
-from stock_system.iqfeed import IQFeed
+# from stock_system.data import DataUtils
+# from stock_system.iqfeed import IQFeed
+from data.dataio import DataUtils
+from data.iqfeed import IQFeed
 import sys, os, datetime
 
 
