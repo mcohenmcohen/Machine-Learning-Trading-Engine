@@ -2,7 +2,7 @@
 This application provides a python based backtesting framework to execute trading systems using various machine learning models.
 
 The code base is comprised of these three modules:
-* database
+* data
   * loader.py - to retrieve real time and historical data.  There are two resources avaiable: pandas_datareader for yahoo data, and DTN IQFeed, which requires you provide your own connection.  On a Mac, I run this outside of python via wine windows emulator.
   * data.py - The contains the database I/O to PostgreSQL.  
   * A sql schema file is provided to build the tables.  Edit as your environment and taste dictates.
@@ -19,8 +19,8 @@ The code base is comprised of these three modules:
 A good place to start is by looking at pipeline.py, which runs the flow from indicating symbols, selecting a trading system and model to run, and backtesting through accounting.
 
 Perform the following to set up your local environment:
-- database/stockdb.sql: Create the symbol table.
-- database/loader.py: Retrieve data from an online source.  pandas_datareader daily data is the current option unless you have DTN IQ feed.  In which case, run your IQ Feed plugin before executing the loader with that data source.
+- data/stockdb.sql: Create the symbol table.
+- data/loader.py: Retrieve data from an online source.  pandas_datareader daily data is the current option unless you have DTN IQ feed.  In which case, run your IQ Feed plugin before executing the loader with that data source.
 - core/feature_forensics: The main function runs the automated feature engineering processes that generates a csv file with the top features for the given trading system and symbol to backtest.  The csv is used in the pipeline at runtime.
 - core/pipeline:  Now you're setup to run the pipeline.  Just select your trading system and model and you should be good to go!
 
