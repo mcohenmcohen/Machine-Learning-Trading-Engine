@@ -12,7 +12,7 @@ import psycopg2 as pg2
 from sqlalchemy import create_engine
 from pandas_datareader import data as pdr
 import quandl
-from stock_system.iqfeed import IQFeed
+from iqfeed import IQFeed
 import datetime
 import os
 

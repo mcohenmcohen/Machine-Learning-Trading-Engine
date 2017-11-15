@@ -5,7 +5,7 @@ with data set from trading system features
 # Author:  Matt Cohen
 # Python Version 2.7
 
-from stock_system.model import ModelUtils
+from core.model import ModelUtils
 
 
 class Model_RFC(ModelUtils):

@@ -9,33 +9,25 @@ run various features analysis for a given data and column set, and model(s)
 import numpy as np
 from minepy import MINE
 from sklearn.feature_selection import RFE
-from stock_system.data import DataUtils
-from stock_system.model import ModelUtils
+from data.dataio import DataUtils
+from core.model import ModelUtils
 from trading_system.ts_composite import TradingSystem_Comp
 import sys
 import pandas as pd
 
 
-def get_feature_engineering_file_path():
-    return '_data/_FeatureEngineering.csv'
-
-
-def run(df, model, feature_set, rfe_num_feat):
-    print '====== Identify to Remove highly correlated variables ======'
+def check_all(df, model, feature_set, rfe_num_feat):
     check_corr(df, feature_set)
-
-    print '====== Feature selection via MIC ======'
-    #check_mic(df, feature_set)
-
+    check_mic(df, feature_set)
     # RFE should be run offline via run_rfe to generate csv file
-    #print '====== Recursive Feature Extraction ======'
     #check_rfe(df, model, feature_set, rfe_num_feat)
 
 
 def check_corr(df, feature_set, print_matrix=False):
     '''
-    Get/print a correlation matrix to assist in identifying correlated columns
+    Get/print a correlation matrix to assist in identifying correlated features
     '''
+    print '====== Run correlation matrix ======'
     # df = self.df.select_dtypes(['number'])  # Use only numeric columns
     # df = self.df.copy()
     # import pdb; pdb.set_trace()
@@ -79,6 +71,7 @@ def check_mic(df, feature_set):
 
     TODO - float to int bug
     '''
+    print '====== Run MIC ======'
     # df = self.df.copy()
     def print_stats(mine, feature):
         print "%s MIC: %s" % (feature, mine.mic())
@@ -123,8 +116,9 @@ def check_rfe(in_df, model, feature_set, num_top_features):
     #import pdb; pdb.set_trace()
     estimator = model
     selector = RFE(estimator, num_top_features, step=1)
-
-    print 'Fitting RFE (this can take a while with many features.  This trading system  has %s features)' % X.shape[1]
+    print '====== Run recursive feature elimination ======'
+    print '(Fitting RFE can take a while with many features.  ' \
+          'This trading system has %s features)' % X.shape[1]
     import time; t1 = time.time()
     selector = selector.fit(X, y)
     t2 = time.time(); print "Done. RFE processing time: " + str((t2 - t1))
@@ -143,12 +137,19 @@ def check_rfe(in_df, model, feature_set, num_top_features):
 
 #####################################
 
-def run_rfe(in_df, num_top_features, ts, symbol):
-    print '====== Feature Engineering RFE for symbol: %s ======' % symbol
+def build_fe_file(in_df, num_top_features, ts, symbol):
+    '''
+    Identify the top features for each model for the given trading system class
+    and write to a csv file.
+    '''
     m = ModelUtils()
     model_names = m.get_model_list()
-    series_list = []
     #model_names = 'abr,linr,logr,lasso,ridge'.split(',')
+    print '====== Generate csv file of top features ======'
+    print '>>> symbol: %s' % symbol
+    print '>>> models: %s' % model_names
+
+    series_list = []
 
     df = in_df.copy()
     for model_name in model_names:
@@ -164,20 +165,22 @@ def run_rfe(in_df, num_top_features, ts, symbol):
         model = m.set_model(model_name)
         # ts.check_corr()
         # ts.check_mic()
-        print '=== Process top features for model: %s ===' % model.__class__.__name__
+        print '=== Identify the top features for model: %s ===' % model.__class__.__name__
         selected_features = check_rfe(df, model, ts.get_features(), num_top_features)
         feature_series = pd.Series(selected_features, name=model_name)
         series_list.append(feature_series)
 
     # model_features_df = pd.concat(series_list, axis=1).reset_index()
     model_features_df = pd.concat(series_list, join='inner',axis=1)
+    model_features_df = model_features_df.swapaxes(1,0)
+    del model_features_df[0]
+    import pdb; pdb.set_trace()
     # import pdb; pdb.set_trace()
     # del model_features_df['Unnamed: 0']
-    f_path = get_feature_engineering_file_path()
-    print 'Write features to csv to %s' % f_path
-    model_features_df.to_csv(f_path)
 
-    #pd.read_csv('_FeatureEngineering.csv',index_col=0)
+    # print 'Write features to csv to %s' % f_path
+    # model_features_df.to_csv(f_path)
+    write_model_features(model_features_df, symbol, dest='db')
 
 def run_cov_matrix(ts, df):
     print '====== Feature Forensics Covariance Matrix for symbol ======'
@@ -185,6 +188,22 @@ def run_cov_matrix(ts, df):
     corr_df.to_csv('_CorrelationMatrix.csv')
     corr_top_df.to_csv('_CorrelationTopMatrix.csv')
 
+def get_feature_engineering_file_path():
+    return '_data/_FeatureEngineering.csv'
+
+def write_model_features(model_features_df, symbol, dest='db'):
+    f_path = get_feature_engineering_file_path()
+    print 'Write features to %s to %s' % (dest, f_path)
+    if dest == 'csv':
+        model_features_df.to_csv(f_path)
+    if dest == 'db':
+        utils = DataUtils()
+        table_name = 'model_top_features'
+        setter_fields = model_features_df.reset_index().columns.tolist()
+        selector_fields = ['symbol','model']
+        utils.upsert('model_top_features',  selector_fields, setter_fields, model_features_df)
+
+    print 'Done.'
 
 def VWAP(in_df):
     '''
@@ -216,6 +235,6 @@ if __name__ == '__main__':
     # get stock data from db as features dataframe from the trading system
     df = db.read_symbol_data(symbol, 'd')
     df = ts.preprocess(df)
-
+    #import pdb; pdb.set_trace()
     # run_cov_matrix(ts, df)
-    run_rfe(df, 5, ts, symbol)
+    build_fe_file(df, 5, ts, symbol)
