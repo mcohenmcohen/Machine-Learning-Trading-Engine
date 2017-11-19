@@ -192,17 +192,22 @@ class ModelUtils(object):
                       | FN | TN |
                       -----------
         '''
+        #import pdb; pdb.set_trace()
+        def to_6_chars(strg):
+            strg = str(strg)
+            s = ' ' * (6 - len(strg)) + strg
+            return s
+
         try:
             mat = self.standard_confusion_matrix(y_true, y_pred)
-            print '              Actual'
-            print '        ------------------'
-            print '        | %s | %s |' % (mat[0][0], mat[0][1])
-            print 'Predict ------------------'
-            print '        | %s | %s |' % (mat[1][0], mat[1][1])
-            print '        ------------------'
-        except:
-            print "Can't print confusion matrix for regressor"
-
+            print '               Actual'
+            print '        -------------------'
+            print '        | %s | %s |' % (to_6_chars(mat[0][0]), to_6_chars(mat[0][1]))
+            print 'Predict -------------------'
+            print '        | %s | %s |' % (to_6_chars(mat[1][0]), to_6_chars(mat[1][1]))
+            print '        -------------------'
+        except Exception as e:
+            print "Can't print confusion matrix for regressor.  Error: %s" % e
 
     def print_feature_importance(self, model, features, num_feat=10):
         '''
@@ -408,6 +413,15 @@ class GridSearcher(object):
             print "  processing time: {} ".format(timeit.default_timer() - start_time)
             print "  f1 score: {}".format(gs.best_score_)
             print "  best params: {}".format(gs.best_params_)
+
+            # Print the mean and std for each candidate along with the parameter
+            # settings for all the candidates explored by grid search.
+            n_candidates = len(gs.cv_results_['params'])
+            for i in range(n_candidates):
+                print(i, 'params - %s; mean - %0.2f; std - %0.2f'
+                         % (gs.cv_results_['params'][i],
+                            gs.cv_results_['mean_test_score'][i],
+                            gs.cv_results_['std_test_score'][i]))
 
             searches.append(gs)
 

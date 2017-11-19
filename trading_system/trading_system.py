@@ -11,8 +11,8 @@ class TradingSystem(object):
     '''
     Parent class for trading systems
     '''
-    def __init__(self):
-        self.name = ''  # An optional name
+    def __init__(self, name='Trading System Parent abstract'):
+        self.name = name  # An optional name
         self.excluded_features = ['id','symbol', 'open', 'high', 'low', 'close']
 
     def preprocess(self):

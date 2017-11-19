@@ -23,6 +23,9 @@ class TradingSystem_Comp(TradingSystem):
         self.features = []  # X feature column names
         TradingSystem.__init__(self)
 
+        super(TradingSystem_Comp, self).__init__(
+            name='Trading System Composite')
+
     def preprocess(self, in_df):
         '''
         Build feature columns added to the input data frame.
