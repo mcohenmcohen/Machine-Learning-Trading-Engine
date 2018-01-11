@@ -11,7 +11,7 @@ The code base is comprised of these three modules:
 * core
   * Model classes implement models and associated hyperparameter settings.  model.py provides a variety of utilities (note: this is soon to be refactored).
   * backtester.py provides the engine to run your trading system on the selected stock over an n-day forecast period.  More features are to come.
-  * A feature engineering module to identify important and collinear features, including helper functions are to run correlation, covariance/collinearity analysis, MIC and RFE.
+  * A feature engineering module to identify important and collinear features, including helper functions to run correlation, covariance/collinearity analysis, MIC and RFE.
   * Feature importance and print functions for regression and tree models
   * A number of plotting functions, I find more easily used at this point with a notebook.  This may take some tweaking.
   * An accounting module to calculate profit/loss scenarios (very, very thin right now and will most certainly be replaced.
