@@ -21,8 +21,8 @@ A good place to start is by looking at pipeline.py, which runs the flow from ind
 Perform the following to set up your local environment:
 - data/stockdb.sql: Create the symbol table.
 - data/loader.py: Retrieve data from an online source.  pandas_datareader daily data is the current option unless you have DTN IQ feed.  In which case, run your IQ Feed plugin before executing the loader with that data source.
-- core/feature_forensics: The main function runs the automated feature engineering processes that generates a csv file with the top features for the given trading system and symbol to backtest.  The csv is used in the pipeline at runtime.
-- core/pipeline:  Now you're setup to run the pipeline.  Just select your trading system and model and you should be good to go.
+- core/feature_forensics.py: The main function runs the automated feature engineering processes that generates a csv file with the top features for the given trading system and symbol to backtest.  The csv is used in the pipeline at runtime.
+- core/pipeline.py:  Now you're setup to run the pipeline.  Just select your trading system and model and you should be good to go.
 
 Known issues:
 - The system works with classifiers. I have yet to flush out regressors, so those models may fail.
